@@ -1,0 +1,375 @@
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+    
+  }
+
+  generator client {
+    provider = "prisma-client-js"
+     output   = "../node_modules/.prisma/client"
+  }
+
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  password      String?      // Hashed password
+  firstName     String
+  lastName      String
+  phone         String?
+  userType      UserType     // CUSTOMER, EMPLOYEE, ADMIN
+  token         String?      @db.VarChar(255)
+  status        UserStatus   @default(ACTIVE)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  // Relations
+  customer      Customer?
+  employee      Employee?
+
+  @@index([email, userType])
+  @@map("users")
+}
+
+enum UserType {
+  CUSTOMER
+  EMPLOYEE
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// Khách hàng
+model Customer {
+  id         String    @id @default(uuid())
+  userId     String    @unique
+  address    String?
+  city       String?
+  country    String?
+  idNumber   String?   // CMND/CCCD/Hộ chiếu
+  
+  // Relations
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings   Booking[]
+  reviews    Review[]
+
+  @@map("customers")
+}
+
+// Loại phòng
+model RoomType {
+  id            String    @id @default(uuid())
+  name          String    @unique
+  description   String?   @db.Text
+  basePrice     Decimal   @db.Decimal(10, 2)
+  maxOccupancy  Int       @db.SmallInt
+  photoUrls     String  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  rooms         Room[]
+  seasonalRates SeasonalRate[]
+  amenities     Amenity[] // Quan hệ nhiều-nhiều
+
+  @@index([name])
+  @@map("room_types")
+}
+
+// Tiện nghi
+model Amenity {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  roomTypes   RoomType[]
+
+  @@index([name])
+  @@map("amenities")
+}
+
+// Phòng
+model Room {
+  id          String      @id @default(uuid())
+  roomNumber  String      @unique
+  floor       Int         @db.SmallInt
+  status      RoomStatus  @default(AVAILABLE)
+  notes       String?     @db.Text
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  roomTypeId  String
+  roomType    RoomType    @relation(fields: [roomTypeId], references: [id])
+  bookingItems BookingItem[]
+  maintenanceRecords MaintenanceRecord[]
+
+  @@index([roomNumber, status])
+  @@map("rooms")
+}
+
+// Đặt phòng
+model Booking {
+  id              String          @id @default(uuid())
+  bookingDate     DateTime        @default(now())
+  checkInDate     DateTime
+  checkOutDate    DateTime
+  totalGuests     Int             @db.SmallInt
+  specialRequests String?         @db.Text
+  status          BookingStatus   @default(PENDING)
+  bookingSource   BookingSource   @default(DIRECT)
+  totalAmount     Decimal         @db.Decimal(10, 2)
+  guestToken      String?         @unique // Token cho khách vãng lai
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  customerId      String
+  customer        Customer        @relation(fields: [customerId], references: [id])
+  discountId      String?
+  discount        Discount?       @relation(fields: [discountId], references: [id])
+  bookingItems    BookingItem[]
+  payments        Payment[]
+  reviews         Review[]
+
+  @@index([bookingDate, status, customerId])
+  @@map("bookings")
+}
+
+// Chi tiết đặt phòng
+model BookingItem {
+  id            String   @id @default(uuid())
+  pricePerNight Decimal  @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bookingId     String
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  roomId        String
+  room          Room     @relation(fields: [roomId], references: [id])
+
+  @@unique([bookingId, roomId])
+  @@index([bookingId, roomId])
+  @@map("booking_items")
+}
+
+// Thanh toán
+model Payment {
+  id              String        @id @default(uuid())
+  amount          Decimal       @db.Decimal(10, 2)
+  paymentDate     DateTime      @default(now())
+  paymentMethod   PaymentMethod
+  transactionId   String?       // Bắt buộc cho một số phương thức
+  status          PaymentStatus @default(PENDING)
+  notes           String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  bookingId       String
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+
+  @@index([bookingId, status])
+  @@map("payments")
+}
+
+// Đánh giá
+model Review {
+  id          String   @id @default(uuid())
+  rating      Int      @db.SmallInt // 1-5, kiểm tra trong logic ứng dụng
+  comment     String?  @db.Text
+  reviewDate  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+
+  @@index([customerId, bookingId])
+  @@map("reviews")
+}
+
+// Giá theo mùa
+model SeasonalRate {
+  id          String   @id @default(uuid())
+  startDate   DateTime
+  endDate     DateTime
+  multiplier  Decimal  @db.Decimal(5, 2) // Nhân với giá cơ bản
+  seasonName  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  roomTypeId  String
+  roomType    RoomType @relation(fields: [roomTypeId], references: [id])
+
+  @@index([roomTypeId, startDate, endDate])
+  @@map("seasonal_rates")
+}
+
+// Bảo trì phòng
+model MaintenanceRecord {
+  id          String            @id @default(uuid())
+  description String            @db.Text
+  startDate   DateTime
+  endDate     DateTime?
+  status      MaintenanceStatus @default(SCHEDULED)
+  cost        Decimal?          @db.Decimal(10, 2)
+  notes       String?           @db.Text
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  roomId      String
+  room        Room              @relation(fields: [roomId], references: [id])
+
+  @@index([roomId, status])
+  @@map("maintenance_records")
+}
+
+// Nhân viên
+model Employee {
+  id          String         @id @default(uuid())
+  userId      String         @unique
+  position    String
+  department  Department
+  hireDate    DateTime
+  
+  // Relations
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roles       EmployeeRole[]
+
+  @@map("employees")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // "ADMIN", "MANAGER", "STAFF", etc.
+  permissions Json     // ["READ_BOOKINGS", "EDIT_ROOMS", etc.] lưu dưới dạng JSON
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  employees   EmployeeRole[]
+  
+  @@map("roles")
+}
+
+model EmployeeRole {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  roleId      String
+  role        Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  
+  @@unique([employeeId, roleId])
+  @@map("employee_roles")
+}
+
+// Khuyến mãi
+model Discount {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  percentage  Decimal  @db.Decimal(5, 2) // Phần trăm giảm giá
+  validFrom   DateTime
+  validTo     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookings    Booking[]
+
+  @@index([code, validFrom, validTo])
+  @@map("discounts")
+}
+
+// Nhật ký kiểm tra
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String   // Ví dụ: "CREATE_BOOKING", "UPDATE_PAYMENT"
+  entity      String   // Ví dụ: "Booking", "Payment"
+  entityId    String   // ID của thực thể
+  userId      String?  // Có thể là Customer hoặc Employee
+  userType    String?  // "Customer", "Employee", hoặc "System"
+  details     String?  @db.Text // Chi tiết hành động
+  createdAt   DateTime @default(now())
+
+  @@index([entity, entityId, createdAt])
+  @@map("audit_logs")
+}
+
+// Enum trạng thái phòng
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+  CLEANING
+  RESERVED
+  RESTRICTED
+}
+
+// Enum trạng thái đặt phòng
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+// Enum nguồn đặt phòng
+enum BookingSource {
+  DIRECT
+  WEBSITE
+  PHONE
+  EMAIL
+  TRAVEL_AGENT
+  BOOKING_PLATFORM
+}
+
+// Enum phương thức thanh toán
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  PAYPAL
+  MOBILE_PAYMENT
+  QR_CODE
+}
+
+// Enum trạng thái thanh toán
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Enum phòng ban
+enum Department {
+  FRONT_DESK
+  HOUSEKEEPING
+  RESTAURANT
+  MAINTENANCE
+  MANAGEMENT
+  ACCOUNTING
+  HR
+}
+
+// Enum trạng thái bảo trì
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// Enum trạng thái nhân viên
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+}
