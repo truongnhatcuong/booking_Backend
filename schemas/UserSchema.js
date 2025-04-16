@@ -3,7 +3,12 @@ import { z } from "zod";
 export const userSchema = z.object({
   firstName: z.string().min(1, { message: "Vui lòng nhập họ" }),
   lastName: z.string().min(1, { message: "Vui lòng nhập tên" }),
-  email: z.string().email({ message: "Email không hợp lệ" }),
+  email: z
+    .string()
+    .email()
+    .refine((val) => val.endsWith("@gmail.com"), {
+      message: "Chỉ chấp nhận email Gmail",
+    }),
   phone: z
     .string()
     .min(9, { message: "Số điện thoại không hợp lệ" })

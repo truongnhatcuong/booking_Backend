@@ -41,7 +41,7 @@ enum UserStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
-}
+} 
 
 // Khách hàng
 model Customer {
@@ -73,11 +73,24 @@ model RoomType {
 
   rooms         Room[]
   seasonalRates SeasonalRate[]
-  amenities     Amenity[] // Quan hệ nhiều-nhiều
-
+  amenities RoomTypeAmenity[]
   @@index([name])
   @@map("room_types")
 }
+
+model RoomTypeAmenity {
+  id          String    @id @default(uuid())
+  roomTypeId  String
+  amenityId   String
+  createdAt   DateTime  @default(now())
+
+  roomType    RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  amenity     Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@unique([roomTypeId, amenityId])
+  @@map("room_type_amenities")
+}
+
 
 // Tiện nghi
 model Amenity {
@@ -86,9 +99,7 @@ model Amenity {
   description String?   @db.Text
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  roomTypes   RoomType[]
-
+    roomTypes RoomTypeAmenity[]
   @@index([name])
   @@map("amenities")
 }
@@ -102,7 +113,6 @@ model Room {
   notes       String?     @db.Text
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-
   roomTypeId  String
   roomType    RoomType    @relation(fields: [roomTypeId], references: [id])
   bookingItems BookingItem[]
@@ -123,10 +133,8 @@ model Booking {
   status          BookingStatus   @default(PENDING)
   bookingSource   BookingSource   @default(DIRECT)
   totalAmount     Decimal         @db.Decimal(10, 2)
-  guestToken      String?         @unique // Token cho khách vãng lai
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
-
   customerId      String
   customer        Customer        @relation(fields: [customerId], references: [id])
   discountId      String?
@@ -246,8 +254,8 @@ model Employee {
 
 model Role {
   id          String   @id @default(uuid())
-  name        String   @unique // "ADMIN", "MANAGER", "STAFF", etc.
-  permissions Json     // ["READ_BOOKINGS", "EDIT_ROOMS", etc.] lưu dưới dạng JSON
+  name        String   @unique 
+  permissions Json    
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   employees   EmployeeRole[]
@@ -351,12 +359,8 @@ enum PaymentStatus {
 // Enum phòng ban
 enum Department {
   FRONT_DESK
-  HOUSEKEEPING
-  RESTAURANT
   MAINTENANCE
   MANAGEMENT
-  ACCOUNTING
-  HR
 }
 
 // Enum trạng thái bảo trì

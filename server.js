@@ -1,9 +1,11 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import routerUser from "./router/userRoute.js";
 import cookieParser from "cookie-parser";
-import employeeRouter from "./router/employeeRouter.js";
+import amenityRouter from "./api/Amenity.route.js";
+import routerUser from "./api/user.route.js";
+import employeeRouter from "./api/employee.route.js";
+import routerRoomtype from "./api/roomType.route.js";
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -19,7 +21,8 @@ app.get("/", (req, res) => {
   res.json("server running.....").status(200);
 });
 app.use("/api/auth", routerUser, employeeRouter);
-
+app.use("/api/amenity", amenityRouter);
+app.use("/api/roomtype", routerRoomtype);
 app.listen(port, () => {
   console.log("server started run :" + port);
 });
