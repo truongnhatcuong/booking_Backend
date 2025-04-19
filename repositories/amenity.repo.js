@@ -24,3 +24,12 @@ export async function deletedAmenityRepo(id) {
     select: { id: true },
   });
 }
+
+export async function UpdateAmenityRepo(id, data) {
+  return await prisma.amenity.update({
+    where: {
+      id,
+    },
+    data,
+  });
+}

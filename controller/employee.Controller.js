@@ -2,6 +2,7 @@ import { employeeSchema } from "../schemas/EmployeeSchema.js";
 import {
   createEmployeeService,
   DeleteEmployeeService,
+  getAllEmployeeService,
 } from "../services/employee.service.js";
 
 export default async function employeeRegister(req, res) {
@@ -29,6 +30,15 @@ export async function DeleteEmployeeCotroller(req, res) {
     res.status(200).json({
       message: `id : ${result} của nhân viên nãy đã được xóa`,
     });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function getAllEmployee(req, res) {
+  try {
+    const employee = await getAllEmployeeService();
+    return res.status(200).json({ employee, message: "thành công" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

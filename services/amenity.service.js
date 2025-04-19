@@ -2,6 +2,7 @@ import {
   createAmenityRepo,
   deletedAmenityRepo,
   getAmenityRepository,
+  UpdateAmenityRepo,
 } from "../repositories/amenity.repo.js";
 
 export async function getAmenityService() {
@@ -17,4 +18,13 @@ export async function createAmenityService({ name, description }) {
 export async function deleteAmenityService(id) {
   const deleted = await deletedAmenityRepo(id);
   return deleted;
+}
+
+export async function updateAmenityService(id, { name, description }) {
+  const data = {
+    name,
+    description,
+  };
+  const updatedAmenity = await UpdateAmenityRepo(id, data);
+  return updatedAmenity;
 }

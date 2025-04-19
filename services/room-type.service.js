@@ -37,7 +37,7 @@ export async function getRoomTypeService() {
 export async function getRoomTypeByIdService(id) {
   const getRoomTypeById = await getRoomTypeByIdRepo(id);
   if (!getRoomTypeById) {
-    throw new Error("Id Không tồn tại");
+    throw new NotFoundError("Id Không tồn tại");
   }
   return getRoomTypeById;
 }
@@ -48,7 +48,7 @@ export async function updateRoomTypeService(
 ) {
   const getRoomTypeById = await getRoomTypeByIdRepo(id);
   if (!getRoomTypeById) {
-    throw new Error("Id Không tồn tại");
+    throw new NotFoundError("Id Không tồn tại");
   }
   const updateRoomtype = await updateRoomTypeRepo(id, {
     name,
@@ -57,6 +57,7 @@ export async function updateRoomTypeService(
     maxOccupancy,
     photoUrls,
   });
+
   return { updateRoomtype, getRoomTypeById };
 }
 
@@ -75,10 +76,11 @@ export async function addAmenityToRoomTypeService(roomTypeId, amenityIds) {
     throw new NotFoundError("Room type not found");
   }
   if (amenityIds.length === 0) {
-    throw new Error("amenityIds must be a non-empty array");
+    throw new NotFoundError("amenityIds must be a non-empty array");
   }
+  const uniqueAmenityIds = [...new Set(amenityIds)];
   const amenities = await prisma.amenity.findMany({
-    where: { id: { in: amenityIds } },
+    where: { id: { in: uniqueAmenityIds } },
     select: { id: true },
   });
   if (amenities.length !== amenityIds.length) {

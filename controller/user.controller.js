@@ -1,5 +1,6 @@
 import { userSchema, UserUpdateSchema } from "../schemas/UserSchema.js";
 import signUp, {
+  getAllCustomerService,
   getUser,
   login,
   updateUser,
@@ -26,19 +27,20 @@ export default async function signUpController(req, res) {
 // đăng nhập
 export async function loginController(req, res) {
   try {
-    const { email, password,remember } = req.body;
+    const { email, password, remember } = req.body;
     if (!email || !password) {
       return res
         .status(400)
         .json({ message: "Vui lòng điền đầy đủ thông tin!" });
     }
-    const { accessToken } = await login({ email, password ,remember});
+    const { accessToken } = await login({ email, password, remember });
 
-      const maxAgeChange = remember===true ? 3 * 60 * 60 * 1000 :60 * 60 * 1000
+    const maxAgeChange =
+      remember === true ? 3 * 60 * 60 * 1000 : 60 * 60 * 1000;
     res.cookie("token", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge:maxAgeChange ,
+      maxAge: maxAgeChange,
       sameSite: "lax",
     });
     return res
@@ -77,4 +79,9 @@ export async function getUserController(req, res) {
   } catch (err) {
     return res.status(404).json({ message: err.message });
   }
+}
+
+export async function getAllCustomer(req, res) {
+  const customer = await getAllCustomerService();
+  return res.status(200).json({ customer, message: "thành Công" });
 }

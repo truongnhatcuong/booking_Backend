@@ -6,6 +6,7 @@ import amenityRouter from "./api/Amenity.route.js";
 import routerUser from "./api/user.route.js";
 import employeeRouter from "./api/employee.route.js";
 import routerRoomtype from "./api/roomType.route.js";
+import routerRoom from "./api/room.route.js";
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -23,6 +24,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", routerUser, employeeRouter);
 app.use("/api/amenity", amenityRouter);
 app.use("/api/roomtype", routerRoomtype);
+app.use("/api/room", routerRoom);
 app.listen(port, () => {
   console.log("server started run :" + port);
 });

@@ -2,19 +2,27 @@ import { prisma } from "../lib/client.js";
 
 export async function createRoomTypeRepo(data) {
   return await prisma.roomType.create({
-    data: {
-      ...data,
-      photoUrls: data.photoUrls.join(","),
-    },
+    data,
   });
 }
 
 export async function getRoomTypeRepo() {
   return await prisma.roomType.findMany({
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      basePrice: true,
+      maxOccupancy: true,
+      photoUrls: true,
       amenities: {
-        include: {
-          amenity: true,
+        select: {
+          amenity: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
     },
@@ -35,10 +43,7 @@ export async function getRoomTypeByIdRepo(id) {
 export async function updateRoomTypeRepo(id, data) {
   return prisma.roomType.update({
     where: { id },
-    data: {
-      ...data,
-      photoUrls: data.photoUrls ? data.photoUrls.join(",") : undefined,
-    },
+    data,
   });
 }
 
@@ -60,6 +65,19 @@ export async function addAmenityRepo(roomTypeId, amenityIds) {
 }
 
 export async function removeAmenityRepo(roomTypeId, amenityId) {
+  const existing = await prisma.roomTypeAmenity.findUnique({
+    where: {
+      roomTypeId_amenityId: {
+        roomTypeId,
+        amenityId,
+      },
+    },
+  });
+  if (!existing) {
+    throw new Error(
+      `Amenity with ID ${amenityId} not found in room type ${roomTypeId}`
+    );
+  }
   return prisma.roomTypeAmenity.delete({
     where: {
       roomTypeId_amenityId: {

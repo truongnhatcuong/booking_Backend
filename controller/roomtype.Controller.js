@@ -31,9 +31,9 @@ export async function createRoomTypeController(req, res) {
 export async function getAllRoomTypes(req, res) {
   try {
     const roomTypes = await getRoomTypeService();
-    res.status(200).json(roomTypes);
+    return res.status(200).json(roomTypes);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 }
 
@@ -41,9 +41,9 @@ export async function getRoomTypesById(req, res) {
   const { id } = req.params;
   try {
     const result = await getRoomTypeByIdService(id);
-    res.status(200).json(result);
+    return res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 }
 
@@ -58,9 +58,11 @@ export async function updateRoomType(req, res) {
       id,
       parsed.data
     );
-    res.status(200).json({ updateRoomtype, message: "cập nhật thành công" });
+    return res
+      .status(200)
+      .json({ updateRoomtype, message: "cập nhật thành công" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 }
 
@@ -72,11 +74,11 @@ export async function DeleteRoomType(req, res) {
     if (!result) {
       return res.status(400).json({ message: `ID ${id} không tồn tại` });
     }
-    res
+    return res
       .status(200)
       .json({ message: `Đã xóa thành công ID: ${result.deleted.id}` });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 }
 
@@ -92,19 +94,21 @@ export async function addAmenity(req, res) {
       req.params.id,
       amenityIds
     );
-    res.status(201).json(roomTypeAmenities);
+    return res
+      .status(201)
+      .json({ roomTypeAmenities, message: "Thêm thành công" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 }
 export async function removeAmenity(req, res) {
   const { amenityId } = req.body;
   try {
     const deleted = await removeAmenityService(req.params.id, amenityId);
-    res
+    return res
       .status(200)
       .json(`đã xóa thành công id : ${deleted.amenityId} từ RoomtypeAmenity`);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 }

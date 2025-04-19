@@ -51,3 +51,23 @@ export async function getUserToken(userId) {
     },
   });
 }
+
+export async function getAllCustomerRepo() {
+  return await prisma.user.findMany({
+    where: {
+      userType: "CUSTOMER",
+    },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      userType: true,
+      status: true,
+      customer: {
+        select: { address: true, city: true, country: true, idNumber: true },
+      },
+    },
+  });
+}

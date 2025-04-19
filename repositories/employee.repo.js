@@ -56,3 +56,23 @@ export async function findEmployeeByID(id) {
     select: { id: true },
   });
 }
+
+export async function getAllEmployeeRepo() {
+  return await prisma.user.findMany({
+    where: {
+      userType: "EMPLOYEE",
+    },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      userType: true,
+      status: true,
+      employee: {
+        select: { department: true, hireDate: true, position: true },
+      },
+    },
+  });
+}
