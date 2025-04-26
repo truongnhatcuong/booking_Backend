@@ -4,6 +4,7 @@ import {
   addAmenityRepo,
   createRoomTypeRepo,
   deleteRoomTypeRepo,
+  findNameRoomTypeRepo,
   getRoomTypeByIdRepo,
   getRoomTypeRepo,
   removeAmenityRepo,
@@ -17,6 +18,10 @@ export async function createRoomTypeService({
   maxOccupancy,
   photoUrls,
 }) {
+  const existingNameRoomType = await findNameRoomTypeRepo(name);
+  if (existingNameRoomType) {
+    throw new NotFoundError("Tên loại phòng đã tồn tại");
+  }
   const createRoomType = await createRoomTypeRepo({
     name,
     description,

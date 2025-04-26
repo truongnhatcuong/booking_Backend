@@ -5,6 +5,14 @@ export async function createRoomTypeRepo(data) {
     data,
   });
 }
+export async function findNameRoomTypeRepo(name) {
+  return await prisma.roomType.findUnique({
+    where: {
+      name,
+    },
+    select: { name: true, id: true },
+  });
+}
 
 export async function getRoomTypeRepo() {
   return await prisma.roomType.findMany({

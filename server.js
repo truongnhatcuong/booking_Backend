@@ -7,6 +7,7 @@ import routerUser from "./api/user.route.js";
 import employeeRouter from "./api/employee.route.js";
 import routerRoomtype from "./api/roomType.route.js";
 import routerRoom from "./api/room.route.js";
+import RouterBooking from "./api/booking.route.js";
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -25,6 +26,7 @@ app.use("/api/auth", routerUser, employeeRouter);
 app.use("/api/amenity", amenityRouter);
 app.use("/api/roomtype", routerRoomtype);
 app.use("/api/room", routerRoom);
+app.use("/api/booking", RouterBooking);
 app.listen(port, () => {
   console.log("server started run :" + port);
 });

@@ -79,7 +79,6 @@ export async function login({ email, password, remember }) {
     expiresIn,
   });
 
-  console.log(expiresIn);
 
   return { accessToken: token, user };
 }
@@ -111,6 +110,5 @@ export async function getUser(userId) {
 
 export async function getAllCustomerService() {
   const result = await getAllCustomerRepo();
-
   return result;
 }

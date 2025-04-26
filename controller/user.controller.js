@@ -75,6 +75,7 @@ export async function getUserController(req, res) {
   try {
     const userId = req.user.id;
     const user = await getUser(userId);
+
     return res.status(200).json(user);
   } catch (err) {
     return res.status(404).json({ message: err.message });

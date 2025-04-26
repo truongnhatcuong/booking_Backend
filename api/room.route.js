@@ -1,8 +1,26 @@
 import express from "express";
-import { createRoom, getAllRoom } from "../controller/room.Controller.js";
+import {
+  addImageToRoom,
+  createRoom,
+  deleteImageToRoom,
+  deleteRoom,
+  getAllRoom,
+  updateRoom,
+  getRoomId,
+  getRoomCustomer,
+  getRoomsByRoomTypeId,
+} from "../controller/room.Controller.js";
 
 const routerRoom = express.Router();
 
 routerRoom.post("/", createRoom);
 routerRoom.get("/", getAllRoom);
+routerRoom.get("/customer", getRoomCustomer);
+routerRoom.get("/:id", getRoomId);
+routerRoom.delete("/:id", deleteRoom);
+routerRoom.put("/:id", updateRoom);
+routerRoom.delete("/images/:id", deleteImageToRoom);
+routerRoom.post("/images/:id", addImageToRoom);
+routerRoom.get("/roomtype/:id", getRoomsByRoomTypeId);
+
 export default routerRoom;

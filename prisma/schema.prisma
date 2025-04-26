@@ -117,10 +117,21 @@ model Room {
   roomType    RoomType    @relation(fields: [roomTypeId], references: [id])
   bookingItems BookingItem[]
   maintenanceRecords MaintenanceRecord[]
-
+  images     RoomImage[]
   @@index([roomNumber, status])
   @@map("rooms")
 }
+
+model RoomImage {
+  id        String   @id @default(uuid())
+  imageUrl  String  
+  roomId    String 
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  @@index([roomId]) 
+  @@map("room_images")
+}
+
+
 
 // Đặt phòng
 model Booking {
@@ -153,7 +164,6 @@ model BookingItem {
   pricePerNight Decimal  @db.Decimal(10, 2)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
   bookingId     String
   booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   roomId        String
@@ -172,7 +182,6 @@ model Payment {
   paymentMethod   PaymentMethod
   transactionId   String?       // Bắt buộc cho một số phương thức
   status          PaymentStatus @default(PENDING)
-  notes           String?       @db.Text
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -312,9 +321,6 @@ enum RoomStatus {
   AVAILABLE
   OCCUPIED
   MAINTENANCE
-  CLEANING
-  RESERVED
-  RESTRICTED
 }
 
 // Enum trạng thái đặt phòng
