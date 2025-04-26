@@ -17,4 +17,5 @@ routerRoomtype.put("/:id", updateRoomType);
 routerRoomtype.delete("/:id", DeleteRoomType);
 routerRoomtype.post("/:id/amenities", addAmenity);
 routerRoomtype.delete("/:id/amenities", removeAmenity);
+
 export default routerRoomtype;

@@ -2,7 +2,7 @@ import NotFoundError from "../errors/not-found.error.js";
 import {
   BookingRepo,
   checkStatusBooking,
-  payMentBookingRepo,
+  getAllBookingRepo,
 } from "../repositories/booking.repo.js";
 
 export async function bookingService({
@@ -16,9 +16,6 @@ export async function bookingService({
   pricePerNight,
   roomId,
 }) {
-  if (!customerId) {
-    throw new NotFoundError("Customer ID is required");
-  }
   if (checkInDate && checkOutDate) {
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
@@ -44,7 +41,7 @@ export async function bookingService({
     throw new NotFoundError(`Phòng đã được ${checkBooking.status}`);
   }
 
-  const booking = await BookingRepo(
+  const booking = await BookingRepo({
     customerId,
     checkInDate,
     checkOutDate,
@@ -53,29 +50,13 @@ export async function bookingService({
     totalAmount,
     discountId,
     pricePerNight,
-    roomId
-  );
+    roomId,
+  });
+
   return booking;
 }
 
-export async function payMentBookingService({
-  totalAmount,
-  paymentMethod,
-  bookingId,
-}) {
-  if (totalAmount <= 0) {
-    throw new NotFoundError("Total amount must be greater than 0");
-  }
-  if (!paymentMethod) {
-    throw new NotFoundError("Payment method is required");
-  }
-  if (!bookingId) {
-    throw new NotFoundError("Booking ID is required");
-  }
-  const payment = await payMentBookingRepo(
-    totalAmount,
-    paymentMethod,
-    bookingId
-  );
-  return payment;
+export async function getAllBookingService() {
+  const bookings = await getAllBookingRepo();
+  return bookings;
 }

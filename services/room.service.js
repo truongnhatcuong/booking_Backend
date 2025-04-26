@@ -3,6 +3,7 @@ import {
   createRoomRepo,
   deletedRoomRepo,
   deleteImageToRoomRepo,
+  findBookedDateRangesRepo,
   getAllRoomRepo,
   getRoomCustomerRepo,
   getRoomIdRepo,
@@ -76,4 +77,12 @@ export async function getRoomsByRoomTypeIdService(id) {
 export async function getRoomByIdService(id) {
   const room = await getRoomIdRepo(id);
   return room;
+}
+
+export async function getBookedDatesService(roomId) {
+  const bookings = await findBookedDateRangesRepo(roomId);
+  return bookings.map((booking) => ({
+    start: new Date(booking.checkInDate).toISOString().split("T")[0],
+    end: new Date(booking.checkOutDate).toISOString().split("T")[0],
+  }));
 }

@@ -9,6 +9,7 @@ import {
   getRoomId,
   getRoomCustomer,
   getRoomsByRoomTypeId,
+  getBookedDates,
 } from "../controller/room.Controller.js";
 
 const routerRoom = express.Router();
@@ -22,5 +23,6 @@ routerRoom.put("/:id", updateRoom);
 routerRoom.delete("/images/:id", deleteImageToRoom);
 routerRoom.post("/images/:id", addImageToRoom);
 routerRoom.get("/roomtype/:id", getRoomsByRoomTypeId);
+routerRoom.get("/:id/booked-dates", getBookedDates);
 
 export default routerRoom;

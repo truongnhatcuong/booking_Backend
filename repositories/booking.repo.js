@@ -10,6 +10,7 @@ export async function checkStatusBooking(id) {
     },
   });
 }
+
 export async function BookingRepo(data) {
   const {
     customerId,
@@ -23,11 +24,14 @@ export async function BookingRepo(data) {
     roomId,
   } = data;
 
+  const validCheckInDate = new Date(checkInDate);
+  const validCheckOutDate = new Date(checkOutDate);
+
   return await prisma.booking.create({
     data: {
       bookingDate: new Date(),
-      checkInDate: new Date(checkInDate),
-      checkOutDate: new Date(checkOutDate),
+      checkInDate: validCheckInDate,
+      checkOutDate: validCheckOutDate,
       customerId,
       totalAmount,
       totalGuests,
@@ -45,14 +49,34 @@ export async function BookingRepo(data) {
   });
 }
 
-export async function payMentBookingRepo(data) {
-  return await prisma.payment.create({
-    data: {
-      paymentDate: new Date(),
-      amount: data.totalAmount,
-      paymentMethod: data.paymentMethod,
-      status: "PENDING",
-      bookingId: data.bookingId,
+export async function getAllBookingRepo() {
+  return await prisma.booking.findMany({
+    select: {
+      id: true,
+      checkInDate: true,
+      checkOutDate: true,
+      status: true,
+      totalAmount: true,
+      totalGuests: true,
+
+      customer: {
+        select: {
+          id: true,
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      },
+      payments: {
+        select: {
+          id: true,
+          status: true,
+          paymentMethod: true,
+        },
+      },
     },
   });
 }

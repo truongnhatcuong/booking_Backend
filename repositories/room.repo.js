@@ -186,3 +186,22 @@ export async function getRoomIdRepo(id) {
     },
   });
 }
+
+export async function findBookedDateRangesRepo(roomId) {
+  return await prisma.booking.findMany({
+    where: {
+      bookingItems: {
+        some: {
+          roomId: roomId,
+        },
+      },
+      status: {
+        in: ["PENDING", "CONFIRMED"],
+      },
+    },
+    select: {
+      checkInDate: true,
+      checkOutDate: true,
+    },
+  });
+}

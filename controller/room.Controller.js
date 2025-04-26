@@ -8,6 +8,7 @@ import {
   deleteImageToRoomService,
   deleteRoomService,
   getAllRoomService,
+  getBookedDatesService,
   getRoomByIdService,
   getRoomCustomerService,
   getRoomsByRoomTypeIdService,
@@ -109,6 +110,20 @@ export async function getRoomId(req, res) {
   try {
     const room = await getRoomByIdService(id);
     return res.status(200).json({ room, message: "Thành Công !!" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function getBookedDates(req, res) {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ message: "Room ID is required" });
+  }
+
+  try {
+    const bookedDates = await getBookedDatesService(id);
+    return res.status(200).json(bookedDates);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
