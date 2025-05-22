@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import NotFoundError from "../errors/not-found.error.js";
+
 import {
   RoomTypeSchema,
   RoomUpdateTypeSchema,
@@ -14,7 +14,6 @@ import {
   removeAmenityService,
   updateRoomTypeService,
 } from "../services/room-type.service.js";
-import { getRoomCustomerService } from "../services/room.service.js";
 
 export async function createRoomTypeController(req, res) {
   const parsed = RoomTypeSchema.safeParse(req.body);

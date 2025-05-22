@@ -2,11 +2,12 @@ import { payMentBookingService } from "../services/payment.service.js";
 
 export async function payMentBooking(req, res) {
   try {
-    const { amount, paymentMethod, bookingId } = req.body;
+    const { amount, paymentMethod, bookingId, status } = req.body;
     const payment = await payMentBookingService({
       amount,
       paymentMethod,
       bookingId,
+      status,
     });
     console.log(amount, paymentMethod, bookingId);
 

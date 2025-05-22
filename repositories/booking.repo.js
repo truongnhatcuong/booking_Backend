@@ -11,19 +11,18 @@ export async function checkStatusBooking(id) {
   });
 }
 
-export async function BookingRepo(data) {
-  const {
-    customerId,
-    checkInDate,
-    checkOutDate,
-    totalGuests,
-    specialRequests,
-    totalAmount,
-    discountId,
-    pricePerNight,
-    roomId,
-  } = data;
-
+export async function BookingRepo({
+  customerId,
+  checkInDate,
+  checkOutDate,
+  totalGuests,
+  bookingSource,
+  specialRequests,
+  totalAmount,
+  discountId,
+  pricePerNight,
+  roomId,
+}) {
   const validCheckInDate = new Date(checkInDate);
   const validCheckOutDate = new Date(checkOutDate);
 
@@ -36,7 +35,7 @@ export async function BookingRepo(data) {
       totalAmount,
       totalGuests,
       specialRequests: specialRequests || null,
-      bookingSource: "WEBSITE",
+      bookingSource,
       status: "PENDING",
       discountId: discountId || null,
       bookingItems: {
@@ -49,8 +48,15 @@ export async function BookingRepo(data) {
   });
 }
 
-export async function getAllBookingRepo() {
+export async function getAllBookingRepo(idNumber) {
   return await prisma.booking.findMany({
+    where: {
+      customer: {
+        idNumber: {
+          contains: idNumber,
+        },
+      },
+    },
     select: {
       id: true,
       checkInDate: true,
@@ -58,10 +64,25 @@ export async function getAllBookingRepo() {
       status: true,
       totalAmount: true,
       totalGuests: true,
-
+      bookingItems: {
+        select: {
+          room: {
+            select: {
+              roomType: {
+                select: {
+                  name: true,
+                  photoUrls: true,
+                },
+              },
+              roomNumber: true,
+            },
+          },
+        },
+      },
       customer: {
         select: {
           id: true,
+          idNumber: true,
           user: {
             select: {
               firstName: true,
@@ -77,6 +98,169 @@ export async function getAllBookingRepo() {
           paymentMethod: true,
         },
       },
+    },
+  });
+}
+
+export async function confirmStatusRepo(id) {
+  const booking = await prisma.booking.findUnique({
+    where: { id },
+    select: {
+      status: true,
+      bookingItems: {
+        select: {
+          roomId: true,
+        },
+      },
+    },
+  });
+  if (!booking) throw new Error("Không tìm thấy booking");
+  let nextStatus;
+  let paymentStatus;
+
+  if (booking.status === "PENDING") {
+    nextStatus = "CHECKED_IN";
+    paymentStatus = "COMPLETED";
+    await prisma.room.update({
+      where: { id: booking.bookingItems[0].roomId },
+      data: {
+        status: "OCCUPIED", // Cập nhật trạng thái phòng sau khi khách nhận phòng
+      },
+    });
+  } else if (booking.status === "CHECKED_IN") {
+    nextStatus = "CHECKED_OUT";
+    paymentStatus = "COMPLETED";
+    await prisma.room.update({
+      where: { id: booking.bookingItems[0].roomId },
+      data: {
+        status: "AVAILABLE", // Cập nhật trạng thái phòng sau khi khách nhận phòng
+      },
+    });
+  } else {
+    throw new Error(
+      "Trạng thái hiện tại không hợp lệ hoặc không thể chuyển trạng thái"
+    );
+  }
+  return prisma.booking.update({
+    where: {
+      id,
+    },
+    data: {
+      status: nextStatus,
+      payments: {
+        updateMany: {
+          where: {
+            bookingId: id,
+          },
+          data: {
+            status: paymentStatus,
+          },
+        },
+      },
+    },
+    select: {
+      status: true,
+      payments: {
+        select: {
+          status: true,
+        },
+      },
+    },
+  });
+}
+
+export async function CancelledBookingRepo(id) {
+  return prisma.booking.update({
+    where: {
+      id,
+    },
+    data: {
+      status: "CANCELLED",
+      payments: {
+        updateMany: {
+          where: {
+            bookingId: id,
+          },
+          data: {
+            status: "REFUNDED",
+          },
+        },
+      },
+    },
+  });
+}
+
+export async function getBookingForUserRepo(id) {
+  return await prisma.booking.findMany({
+    where: { customerId: id },
+    select: {
+      id: true,
+      bookingDate: true,
+      checkInDate: true,
+      checkOutDate: true,
+      totalGuests: true,
+      status: true,
+      bookingSource: true,
+      totalAmount: true,
+
+      bookingItems: {
+        select: {
+          pricePerNight: true,
+          room: {
+            select: {
+              roomNumber: true,
+              floor: true,
+
+              roomType: {
+                select: {
+                  name: true,
+                  amenities: {
+                    select: {
+                      amenity: {
+                        select: {
+                          id: true,
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              images: true,
+            },
+          },
+        },
+      },
+      payments: {
+        select: {
+          paymentDate: true,
+          amount: true,
+          paymentMethod: true,
+          status: true,
+        },
+      },
+      discount: true,
+    },
+    orderBy: {
+      bookingDate: "desc",
+    },
+  });
+}
+
+export async function removeBookingUserRepo(id) {
+  await prisma.bookingItem.deleteMany({
+    where: {
+      bookingId: id,
+    },
+  });
+  await prisma.payment.deleteMany({
+    where: {
+      bookingId: id,
+    },
+  });
+  return prisma.booking.delete({
+    where: {
+      id,
     },
   });
 }

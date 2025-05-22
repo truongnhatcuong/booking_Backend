@@ -7,7 +7,7 @@ export async function payMentBookingRepo(data) {
       paymentDate: new Date(),
       amount: new Prisma.Decimal(data.amount),
       paymentMethod: data.paymentMethod,
-      status: "PENDING",
+      status: data.status,
       bookingId: data.bookingId,
     },
   });

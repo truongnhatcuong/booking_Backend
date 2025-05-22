@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import {
+  changePasswordRepo,
+  createCustomerRepo,
   createUser,
   findUserByEmail,
   getAllCustomerRepo,
@@ -79,7 +81,6 @@ export async function login({ email, password, remember }) {
     expiresIn,
   });
 
-
   return { accessToken: token, user };
 }
 
@@ -108,7 +109,38 @@ export async function getUser(userId) {
   return user;
 }
 
-export async function getAllCustomerService() {
-  const result = await getAllCustomerRepo();
+export async function getAllCustomerService(isNumber) {
+  const result = await getAllCustomerRepo(isNumber);
+  return result;
+}
+
+export async function createCustomerService({
+  firstName,
+  lastName,
+  email,
+  phone,
+  idNumber,
+}) {
+  const customernew = await createCustomerRepo({
+    firstName,
+    lastName,
+    email,
+    phone,
+    idNumber,
+  });
+  return customernew;
+}
+
+export async function changePasswordService(
+  userId,
+  currentPassword,
+  newPassword
+) {
+  const user = await getUserToken(userId);
+  if (!user) throw new Error("Người dùng không tồn tại");
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) throw new NotFoundError("Mật Khẩu Không Chính Xác !");
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const result = await changePasswordRepo(userId, hashedPassword);
   return result;
 }

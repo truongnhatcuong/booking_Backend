@@ -38,6 +38,7 @@ export async function getAllRoomRepo() {
         select: {
           name: true,
           maxOccupancy: true,
+          basePrice: true,
         },
       },
     },
@@ -88,9 +89,6 @@ export async function addImageToRoomRepo(data) {
 // dành cho khách hàng
 export async function getRoomCustomerRepo() {
   return prisma.room.findMany({
-    where: {
-      status: "AVAILABLE",
-    },
     select: {
       id: true,
       roomNumber: true,
@@ -196,7 +194,7 @@ export async function findBookedDateRangesRepo(roomId) {
         },
       },
       status: {
-        in: ["PENDING", "CONFIRMED"],
+        in: ["PENDING", "CHECKED_IN", "CHECKED_OUT"],
       },
     },
     select: {

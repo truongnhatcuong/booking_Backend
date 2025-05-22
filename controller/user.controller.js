@@ -1,5 +1,12 @@
-import { userSchema, UserUpdateSchema } from "../schemas/UserSchema.js";
+import {
+  userSchema,
+  UserUpdateSchema,
+  CreateCustomer,
+  changePasswordSchema,
+} from "../schemas/UserSchema.js";
 import signUp, {
+  changePasswordService,
+  createCustomerService,
   getAllCustomerService,
   getUser,
   login,
@@ -83,6 +90,42 @@ export async function getUserController(req, res) {
 }
 
 export async function getAllCustomer(req, res) {
-  const customer = await getAllCustomerService();
+  const { idNumber } = req.query;
+  const customer = await getAllCustomerService(idNumber);
   return res.status(200).json({ customer, message: "thành Công" });
+}
+
+export async function createCustomer(req, res) {
+  const parsed = CreateCustomer.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: parsed.error.issues[0].message });
+  }
+  try {
+    const result = await createCustomerService(parsed.data);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(404).json({ message: error.message });
+  }
+}
+
+export async function changePassword(req, res) {
+  try {
+    const userId = req.user.id;
+    const parsed = changePasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.issues[0].message });
+    }
+    const { currentPassword, newPassword } = parsed.data;
+    console.log(currentPassword, newPassword, userId);
+
+    const result = await changePasswordService(
+      userId,
+      currentPassword,
+      newPassword
+    );
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(404).json({ message: error.message });
+  }
 }

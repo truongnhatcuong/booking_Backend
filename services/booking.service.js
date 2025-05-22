@@ -1,8 +1,13 @@
 import NotFoundError from "../errors/not-found.error.js";
+import { prisma } from "../lib/client.js";
 import {
   BookingRepo,
+  CancelledBookingRepo,
   checkStatusBooking,
+  confirmStatusRepo,
   getAllBookingRepo,
+  getBookingForUserRepo,
+  removeBookingUserRepo,
 } from "../repositories/booking.repo.js";
 
 export async function bookingService({
@@ -11,6 +16,7 @@ export async function bookingService({
   checkOutDate,
   totalGuests,
   specialRequests,
+  bookingSource,
   totalAmount,
   discountId,
   pricePerNight,
@@ -47,6 +53,7 @@ export async function bookingService({
     checkOutDate,
     totalGuests,
     specialRequests,
+    bookingSource,
     totalAmount,
     discountId,
     pricePerNight,
@@ -56,7 +63,103 @@ export async function bookingService({
   return booking;
 }
 
-export async function getAllBookingService() {
-  const bookings = await getAllBookingRepo();
+export async function getAllBookingService(idNumber) {
+  const bookings = await getAllBookingRepo(idNumber);
   return bookings;
+}
+
+export async function bookingToEmpoyeeService({
+  customerId,
+  checkInDate,
+  checkOutDate,
+  totalGuests,
+  specialRequests,
+  bookingSource,
+  discountCode,
+  pricePerNight,
+  roomId,
+}) {
+  if (checkInDate && checkOutDate) {
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+    if (checkIn >= checkOut) {
+      throw new NotFoundError("Check-out date must be after check-in date");
+    }
+  }
+  if (totalGuests <= 0) {
+    throw new NotFoundError("Total guests must be greater than 0");
+  }
+
+  if (pricePerNight <= 0) {
+    throw new NotFoundError("Price per night must be greater than 0");
+  }
+  if (!roomId) {
+    throw new NotFoundError("Room ID is required");
+  }
+  const nights =
+    (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) /
+    (1000 * 60 * 60 * 24);
+  let discount = null;
+  let discountAmount = 0;
+  // nếu có mã giảm giá
+  if (discountCode) {
+    discount = await prisma.discount.findFirst({
+      where: {
+        code: discountCode,
+        validFrom: { lte: new Date() },
+        validTo: { gte: new Date() },
+      },
+    });
+    if (!discount) {
+      throw new Error("Mã giảm giá không hợp lệ hoặc đã hết hạn");
+    }
+    discountAmount =
+      (pricePerNight * nights * Number(discount.percentage)) / 100;
+  }
+  const totalAmount = pricePerNight * nights - discountAmount;
+  if (totalAmount <= 0) {
+    throw new NotFoundError("Tổng Tiền Phải Lớn Hơn không");
+  }
+  const checkBooking = await checkStatusBooking(roomId);
+  if (checkBooking.status !== "AVAILABLE") {
+    throw new NotFoundError(`Phòng đã được ${checkBooking.status}`);
+  }
+
+  const booking = await BookingRepo({
+    customerId,
+    checkInDate,
+    checkOutDate,
+    totalGuests,
+    specialRequests,
+    bookingSource,
+    totalAmount: totalAmount || 0,
+    discountId: discount.id || null,
+    pricePerNight,
+    roomId,
+  });
+
+  return booking;
+}
+
+export async function confirmStatusService(id) {
+  const confirm = await confirmStatusRepo(id);
+  return confirm;
+}
+
+export async function CancelledBookingService(id) {
+  const cancelled = await CancelledBookingRepo(id);
+  return cancelled;
+}
+
+export async function getBookingForUserService(id) {
+  const result = await getBookingForUserRepo(id);
+  return result;
+}
+
+export async function removeBookingUserService(id) {
+  const result = removeBookingUserRepo(id);
+  if (!result) {
+    throw new NotFoundError("Không tìm thấy đặt phòng");
+  }
+  return result;
 }
