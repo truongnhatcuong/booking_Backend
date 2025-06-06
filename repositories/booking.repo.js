@@ -99,6 +99,9 @@ export async function getAllBookingRepo(idNumber) {
         },
       },
     },
+    orderBy: {
+      bookingDate: "desc",
+    },
   });
 }
 
@@ -106,6 +109,7 @@ export async function confirmStatusRepo(id) {
   const booking = await prisma.booking.findUnique({
     where: { id },
     select: {
+      id: true,
       status: true,
       bookingItems: {
         select: {
@@ -124,7 +128,7 @@ export async function confirmStatusRepo(id) {
     await prisma.room.update({
       where: { id: booking.bookingItems[0].roomId },
       data: {
-        status: "OCCUPIED", // Cập nhật trạng thái phòng sau khi khách nhận phòng
+        status: "OCCUPIED",
       },
     });
   } else if (booking.status === "CHECKED_IN") {
@@ -133,7 +137,7 @@ export async function confirmStatusRepo(id) {
     await prisma.room.update({
       where: { id: booking.bookingItems[0].roomId },
       data: {
-        status: "AVAILABLE", // Cập nhật trạng thái phòng sau khi khách nhận phòng
+        status: "AVAILABLE",
       },
     });
   } else {
@@ -141,6 +145,7 @@ export async function confirmStatusRepo(id) {
       "Trạng thái hiện tại không hợp lệ hoặc không thể chuyển trạng thái"
     );
   }
+
   return prisma.booking.update({
     where: {
       id,
@@ -170,6 +175,26 @@ export async function confirmStatusRepo(id) {
 }
 
 export async function CancelledBookingRepo(id) {
+  const booking = await prisma.booking.findUnique({
+    where: { id },
+    select: {
+      bookingItems: {
+        select: {
+          roomId: true,
+        },
+      },
+    },
+  });
+
+  if (!booking) throw new Error("Booking not found");
+
+  await prisma.room.update({
+    where: { id: booking.bookingItems[0].roomId },
+    data: {
+      status: "AVAILABLE",
+    },
+  });
+
   return prisma.booking.update({
     where: {
       id,

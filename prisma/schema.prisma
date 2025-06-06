@@ -227,7 +227,7 @@ model SeasonalRate {
   @@map("seasonal_rates")
 }
 
-// Bảo trì phòng
+
 model MaintenanceRecord {
   id          String            @id @default(uuid())
   description String            @db.Text

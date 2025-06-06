@@ -2,6 +2,7 @@ import { employeeSchema } from "../schemas/EmployeeSchema.js";
 import {
   createEmployeeService,
   DeleteEmployeeService,
+  disableService,
   getAllEmployeeService,
 } from "../services/employee.service.js";
 
@@ -41,5 +42,17 @@ export async function getAllEmployee(req, res) {
     return res.status(200).json({ employee, message: "thành công" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function disableUser(req, res) {
+  const { action } = req.body;
+  const { id } = req.params;
+
+  try {
+    const result = await disableService(id, action);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" + error });
   }
 }

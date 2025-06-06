@@ -28,6 +28,17 @@ export async function getAllRoomRepo() {
       status: true,
       notes: true,
       roomTypeId: true,
+      bookingItems: {
+        select: {
+          booking: {
+            select: {
+              checkInDate: true,
+              checkOutDate: true,
+            },
+          },
+        },
+        orderBy: { booking: { bookingDate: "desc" } },
+      },
       images: {
         select: {
           id: true,

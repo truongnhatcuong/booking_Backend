@@ -1,3 +1,4 @@
+import { hasUserPermission } from "../lib/hasUserPermission.js";
 import {
   userSchema,
   UserUpdateSchema,
@@ -61,7 +62,6 @@ export async function loginController(req, res) {
 //cập nhật thông tin
 export async function updateUserController(req, res) {
   const userId = req.params.id;
-  console.log(userId);
 
   try {
     const parsed = UserUpdateSchema.safeParse(req.body);
@@ -97,6 +97,12 @@ export async function getAllCustomer(req, res) {
 
 export async function createCustomer(req, res) {
   const parsed = CreateCustomer.safeParse(req.body);
+  if (!hasUserPermission(req.user, "CUSTOMER_CREATE")) {
+    return res
+      .status(403)
+      .json({ message: "Bạn không có quyền tạo khách hàng" });
+  }
+
   if (!parsed.success) {
     return res.status(400).json({ message: parsed.error.issues[0].message });
   }

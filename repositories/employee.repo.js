@@ -71,8 +71,33 @@ export async function getAllEmployeeRepo() {
       userType: true,
       status: true,
       employee: {
-        select: { department: true, hireDate: true, position: true },
+        select: {
+          id: true,
+          department: true,
+          hireDate: true,
+          position: true,
+          roles: {
+            select: {
+              role: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
       },
+    },
+  });
+}
+
+export async function disableRepo(id, action) {
+  return await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      status: action,
     },
   });
 }

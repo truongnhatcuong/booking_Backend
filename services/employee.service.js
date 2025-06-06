@@ -1,6 +1,7 @@
 import {
   createEmployee,
   DeleteEmployee,
+  disableRepo,
   findEmployeeByEmail,
   findEmployeeByID,
   getAllEmployeeRepo,
@@ -61,4 +62,9 @@ export async function DeleteEmployeeService(id) {
 export async function getAllEmployeeService() {
   const employee = await getAllEmployeeRepo();
   return employee;
+}
+
+export async function disableService(id, action) {
+  const result = await disableRepo(id, action);
+  return result;
 }
