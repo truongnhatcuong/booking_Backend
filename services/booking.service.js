@@ -1,4 +1,10 @@
 import NotFoundError from "../errors/not-found.error.js";
+import {
+  AuditLogCustomerBooking,
+  logCancelBooking,
+  logCheckIn,
+  logCheckOut,
+} from "../lib/auditLog.js";
 import { prisma } from "../lib/client.js";
 import {
   BookingRepo,
@@ -60,6 +66,7 @@ export async function bookingService({
     roomId,
   });
 
+  await AuditLogCustomerBooking(booking.customer.user, booking);
   return booking;
 }
 
@@ -137,12 +144,17 @@ export async function bookingToEmpoyeeService({
     pricePerNight,
     roomId,
   });
-
+  await AuditLogCustomerBooking(booking.customer.user, booking);
   return booking;
 }
 
 export async function confirmStatusService(id) {
   const confirm = await confirmStatusRepo(id);
+  if (confirm.status === "CHECKED_IN") {
+    await logCheckIn(confirm?.customer?.user || null, confirm);
+  } else if (confirm.status === "CHECKED_OUT") {
+    await logCheckOut(confirm?.customer?.user || null, confirm);
+  }
   return confirm;
 }
 
@@ -157,9 +169,10 @@ export async function getBookingForUserService(id) {
 }
 
 export async function removeBookingUserService(id) {
-  const result = removeBookingUserRepo(id);
+  const result = await removeBookingUserRepo(id);
   if (!result) {
     throw new NotFoundError("Không tìm thấy đặt phòng");
   }
+  await logCancelBooking(result.customer.user, result);
   return result;
 }

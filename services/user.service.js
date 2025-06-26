@@ -8,9 +8,11 @@ import {
   getAllCustomerRepo,
   getUserToken,
   updateUserId,
+  updateUserPassword,
   updateUserToken,
 } from "../repositories/user.repo.js";
 import NotFoundError from "../errors/not-found.error.js";
+import { sendResetMail } from "../lib/mailer.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
@@ -144,3 +146,21 @@ export async function changePasswordService(
   const result = await changePasswordRepo(userId, hashedPassword);
   return result;
 }
+
+export async function forgotPasswordService(email) {
+  const user = await findUserByEmail(email);
+  if (!user) throw new Error("Người dùng không tồn tại");
+  const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "15m" });
+  const resetMail = `${process.env.FRONTEND_URL}/forgot-password/reset-password?token=${token}`;
+  await sendResetMail(email, resetMail);
+}
+
+export const resetPasswordService = async (token, password) => {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const hashed = await bcrypt.hash(password, 10);
+    await updateUserPassword(decoded.id, hashed);
+  } catch (err) {
+    throw new Error("Invalid or expired token", err);
+  }
+};

@@ -45,6 +45,13 @@ export async function BookingRepo({
         },
       },
     },
+    include: {
+      customer: {
+        select: {
+          user: true,
+        },
+      },
+    },
   });
 }
 
@@ -163,8 +170,12 @@ export async function confirmStatusRepo(id) {
         },
       },
     },
-    select: {
-      status: true,
+    include: {
+      customer: {
+        select: {
+          user: true,
+        },
+      },
       payments: {
         select: {
           status: true,
@@ -210,6 +221,11 @@ export async function CancelledBookingRepo(id) {
             status: "REFUNDED",
           },
         },
+      },
+    },
+    include: {
+      customer: {
+        select: { user: true },
       },
     },
   });
@@ -286,6 +302,13 @@ export async function removeBookingUserRepo(id) {
   return prisma.booking.delete({
     where: {
       id,
+    },
+    include: {
+      customer: {
+        select: {
+          user: true,
+        },
+      },
     },
   });
 }

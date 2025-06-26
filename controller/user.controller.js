@@ -8,9 +8,11 @@ import {
 import signUp, {
   changePasswordService,
   createCustomerService,
+  forgotPasswordService,
   getAllCustomerService,
   getUser,
   login,
+  resetPasswordService,
   updateUser,
 } from "../services/user.service.js";
 
@@ -135,3 +137,23 @@ export async function changePassword(req, res) {
     return res.status(404).json({ message: error.message });
   }
 }
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    await forgotPasswordService(email);
+    res.json({ message: "đã gửi email " });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    await resetPasswordService(token, password);
+    res.json({ message: "Password updated" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};

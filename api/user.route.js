@@ -6,9 +6,12 @@ import signUpController, {
   getAllCustomer,
   createCustomer,
   changePassword,
+  forgotPassword,
+  resetPassword,
 } from "../controller/user.controller.js";
 import { authCustomer } from "../lib/authCustomer.js";
 import { authEmployee } from "../lib/authEmployee.js";
+import { getAuditLog } from "../controller/auditlog.Controller.js";
 
 const routerUser = express.Router();
 
@@ -19,5 +22,8 @@ routerUser.put("/user/:id", updateUserController);
 routerUser.post("/user/changePassword", authCustomer, changePassword);
 routerUser.get("/customer", getAllCustomer);
 routerUser.get("/user", authCustomer, getUserController);
+routerUser.get("/auditlog", getAuditLog);
+routerUser.post("/forgot-password", forgotPassword);
+routerUser.post("/reset-password", resetPassword);
 
 export default routerUser;

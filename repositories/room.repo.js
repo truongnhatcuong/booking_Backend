@@ -19,41 +19,103 @@ export async function createRoomRepo(data) {
   });
 }
 
-export async function getAllRoomRepo() {
-  return prisma.room.findMany({
-    select: {
-      id: true,
-      roomNumber: true,
-      floor: true,
-      status: true,
-      notes: true,
-      roomTypeId: true,
-      bookingItems: {
-        select: {
-          booking: {
-            select: {
-              checkInDate: true,
-              checkOutDate: true,
+export async function getAllRoomRepo(
+  checkIn,
+  checkOut,
+  customer,
+  roomType,
+  search,
+  skip,
+  take
+) {
+  const checkInDate = new Date(checkIn);
+  const checkOutDate = new Date(checkOut);
+
+  const where = {
+    // ROOM TYPE
+    ...(roomType || customer
+      ? {
+          roomType: {
+            ...(roomType && { name: roomType }),
+            ...(customer && {
+              maxOccupancy: { gte: Number(customer) },
+            }),
+          },
+        }
+      : {}),
+
+    // SEARCH
+    ...(search && {
+      roomNumber: {
+        contains: search || "",
+      },
+    }),
+
+    // DATE RANGE
+    ...(checkIn &&
+      checkOut &&
+      !isNaN(checkInDate.getTime()) &&
+      !isNaN(checkOutDate.getTime()) && {
+        bookingItems: {
+          none: {
+            booking: {
+              AND: [
+                { checkInDate: { lt: checkOutDate } },
+                { checkOutDate: { gt: checkInDate } },
+              ],
             },
           },
         },
-        orderBy: { booking: { bookingDate: "desc" } },
-      },
-      images: {
-        select: {
-          id: true,
-          imageUrl: true,
+      }),
+  };
+
+  // song song lấy danh sách và tổng số phòng
+  const [rooms, total] = await Promise.all([
+    prisma.room.findMany({
+      where,
+      skip: Number(skip),
+      take: Number(take),
+      select: {
+        id: true,
+        roomNumber: true,
+        floor: true,
+        status: true,
+        notes: true,
+        roomTypeId: true,
+        bookingItems: {
+          select: {
+            booking: {
+              select: {
+                checkInDate: true,
+                checkOutDate: true,
+              },
+            },
+          },
+          orderBy: { booking: { bookingDate: "desc" } },
+        },
+        images: {
+          select: {
+            id: true,
+            imageUrl: true,
+          },
+        },
+        roomType: {
+          select: {
+            id: true,
+            name: true,
+            maxOccupancy: true,
+            basePrice: true,
+          },
         },
       },
-      roomType: {
-        select: {
-          name: true,
-          maxOccupancy: true,
-          basePrice: true,
-        },
-      },
-    },
-  });
+    }),
+    prisma.room.count({ where }),
+  ]);
+
+  return {
+    data: rooms,
+    total,
+  };
 }
 
 export async function deletedRoomRepo(id) {

@@ -109,3 +109,22 @@ export async function changePasswordRepo(id, hashedPassword) {
     },
   });
 }
+
+export async function findUserById(userId) {
+  return await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+}
+
+export async function updateUserPassword(id, hashedPassword) {
+  return await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      password: hashedPassword,
+    },
+  });
+}

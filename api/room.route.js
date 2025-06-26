@@ -11,11 +11,12 @@ import {
   getRoomsByRoomTypeId,
   getBookedDates,
 } from "../controller/room.Controller.js";
+import { authEmployee } from "../lib/authEmployee.js";
 
 const routerRoom = express.Router();
 
 routerRoom.post("/", createRoom);
-routerRoom.get("/", getAllRoom);
+routerRoom.get("/", authEmployee, getAllRoom);
 routerRoom.get("/customer", getRoomCustomer);
 routerRoom.get("/:id", getRoomId);
 routerRoom.delete("/:id", deleteRoom);

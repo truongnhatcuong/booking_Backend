@@ -31,8 +31,20 @@ export async function createRoom(req, res) {
 }
 
 export async function getAllRoom(req, res) {
+  const { checkIn, checkOut, customer, roomType, search, page, limit } =
+    req.query;
+  console.log(checkIn, checkOut, customer, roomType);
+
   try {
-    const room = await getAllRoomService(req);
+    const room = await getAllRoomService(
+      checkIn,
+      checkOut,
+      customer,
+      roomType,
+      search ? search : "",
+      page ? parseInt(page) : 1,
+      limit ? parseInt(limit) : 5
+    );
     return res.status(200).json({ room, message: "Thành Công" });
   } catch (error) {
     return res.status(500).json({ message: error.message });

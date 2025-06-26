@@ -30,9 +30,36 @@ export async function createRoomService({
   return newRoom;
 }
 
-export async function getAllRoomService() {
-  const getRoom = getAllRoomRepo();
-  return getRoom;
+export async function getAllRoomService(
+  checkIn,
+  checkOut,
+  customer,
+  roomType,
+  search,
+  page,
+  limit
+) {
+  const skip = (page - 1) * limit;
+  const take = limit;
+
+  const { data, total } = await getAllRoomRepo(
+    checkIn,
+    checkOut,
+    customer,
+    roomType,
+    search,
+    skip,
+    take
+  );
+  return {
+    data,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 
 export async function deleteRoomService(id) {
