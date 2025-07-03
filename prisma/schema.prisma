@@ -1,34 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
-    
-  }
-
-  generator client {
-    provider = "prisma-client-js"
-     output   = "../node_modules/.prisma/client"
-  }
-
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
 
 model User {
-  id            String       @id @default(uuid())
-  email         String       @unique
-  password      String?      // Hashed password
-  firstName     String
-  lastName      String
-  phone         String?
-  userType      UserType     // CUSTOMER, EMPLOYEE, ADMIN
-  token         String?      @db.VarChar(255)
-  status        UserStatus   @default(ACTIVE)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  
-  // Relations
-  customer      Customer?
-  employee      Employee?
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String?
+  firstName String
+  lastName  String
+  phone     String?
+  userType  UserType
+  token     String?    @db.VarChar(255)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  customer  Customer?
+  employee  Employee?
 
   @@index([email, userType])
   @@map("users")
+}
+
+model Customer {
+  id       String    @id @default(uuid())
+  userId   String    @unique
+  address  String?
+  city     String?
+  country  String?
+  idNumber String?
+  bookings Booking[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviews  Review[]
+
+  @@map("customers")
+}
+
+model RoomType {
+  id            String            @id @default(uuid())
+  name          String            @unique
+  description   String?           @db.Text
+  basePrice     Decimal           @db.Decimal(10, 2)
+  maxOccupancy  Int               @db.SmallInt
+  photoUrls     String
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  amenities     RoomTypeAmenity[]
+  rooms         Room[]
+  seasonalRates SeasonalRate[]
+
+  @@index([name])
+  @@map("room_types")
+}
+
+model RoomTypeAmenity {
+  id         String   @id @default(uuid())
+  roomTypeId String
+  amenityId  String
+  createdAt  DateTime @default(now())
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([roomTypeId, amenityId])
+  @@index([amenityId], map: "room_type_amenities_amenityId_fkey")
+  @@map("room_type_amenities")
+}
+
+model Amenity {
+  id          String            @id @default(uuid())
+  name        String            @unique
+  description String?           @db.Text
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  roomTypes   RoomTypeAmenity[]
+
+  @@index([name])
+  @@map("amenities")
+}
+
+model Room {
+  id                 String              @id @default(uuid())
+  roomNumber         String              @unique
+  floor              Int                 @db.SmallInt
+  status             RoomStatus          @default(AVAILABLE)
+  notes              String?             @db.Text
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  roomTypeId         String
+  bookingItems       BookingItem[]
+  maintenanceRecords MaintenanceRecord[]
+  images             RoomImage[]
+  roomType           RoomType            @relation(fields: [roomTypeId], references: [id])
+
+  @@index([roomNumber, status])
+  @@index([roomTypeId], map: "rooms_roomTypeId_fkey")
+  @@map("rooms")
+}
+
+model RoomImage {
+  id       String @id @default(uuid())
+  imageUrl String
+  roomId   String
+  room     Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@map("room_images")
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  bookingDate     DateTime      @default(now())
+  checkInDate     DateTime
+  checkOutDate    DateTime
+  totalGuests     Int           @db.SmallInt
+  specialRequests String?       @db.Text
+  status          BookingStatus @default(PENDING)
+  bookingSource   BookingSource @default(DIRECT)
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  customerId      String
+  discountId      String?
+  bookingItems    BookingItem[]
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  discount        Discount?     @relation(fields: [discountId], references: [id])
+  payments        Payment[]
+  reviews         Review[]
+
+  @@index([bookingDate, status, customerId])
+  @@index([customerId], map: "bookings_customerId_fkey")
+  @@index([discountId], map: "bookings_discountId_fkey")
+  @@map("bookings")
+}
+
+model BookingItem {
+  id            String   @id @default(uuid())
+  pricePerNight Decimal  @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  bookingId     String
+  roomId        String
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  room          Room     @relation(fields: [roomId], references: [id])
+
+  @@unique([bookingId, roomId])
+  @@index([bookingId, roomId])
+  @@index([roomId], map: "booking_items_roomId_fkey")
+  @@map("booking_items")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  paymentDate   DateTime      @default(now())
+  paymentMethod PaymentMethod
+  transactionId String?
+  status        PaymentStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  bookingId     String
+  amount        Decimal       @db.Decimal(10, 2)
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+
+  @@index([bookingId, status])
+  @@map("payments")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  rating     Int      @db.SmallInt
+  comment    String?  @db.Text
+  reviewDate DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  customerId String
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId, bookingId])
+  @@index([bookingId], map: "reviews_bookingId_fkey")
+  @@map("reviews")
+}
+
+model SeasonalRate {
+  id         String   @id @default(uuid())
+  startDate  DateTime
+  endDate    DateTime
+  multiplier Decimal  @db.Decimal(5, 2)
+  seasonName String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  roomTypeId String
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id])
+
+  @@index([roomTypeId, startDate, endDate])
+  @@map("seasonal_rates")
+}
+
+model MaintenanceRecord {
+  id          String            @id @default(uuid())
+  description String            @db.Text
+  startDate   DateTime
+  endDate     DateTime?
+  status      MaintenanceStatus @default(SCHEDULED)
+  cost        Decimal?          @db.Decimal(10, 2)
+  notes       String?           @db.Text
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  roomId      String
+  room        Room              @relation(fields: [roomId], references: [id])
+
+  @@index([roomId, status])
+  @@map("maintenance_records")
+}
+
+model Employee {
+  id         String         @id @default(uuid())
+  userId     String         @unique
+  position   String
+  department Department
+  hireDate   DateTime
+  roles      EmployeeRole[]
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("employees")
+}
+
+model Role {
+  id          String         @id @default(uuid())
+  name        String         @unique
+  permissions Json
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  employees   EmployeeRole[]
+
+  @@map("roles")
+}
+
+model EmployeeRole {
+  id         String   @id @default(uuid())
+  createdAt  DateTime @default(now())
+  employeeId String
+  roleId     String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, roleId])
+  @@index([roleId], map: "employee_roles_roleId_fkey")
+  @@map("employee_roles")
+}
+
+model Discount {
+  id         String    @id @default(uuid())
+  code       String    @unique
+  percentage Decimal   @db.Decimal(5, 2)
+  validFrom  DateTime
+  validTo    DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  bookings   Booking[]
+
+  @@index([code, validFrom, validTo])
+  @@map("discounts")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String
+  entityId  String
+  userId    String?
+  userType  String?
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId, createdAt])
+  @@map("audit_logs")
 }
 
 enum UserType {
@@ -41,289 +293,14 @@ enum UserStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
-} 
-
-// Khách hàng
-model Customer {
-  id         String    @id @default(uuid())
-  userId     String    @unique
-  address    String?
-  city       String?
-  country    String?
-  idNumber   String?   // CMND/CCCD/Hộ chiếu
-  
-  // Relations
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookings   Booking[]
-  reviews    Review[]
-
-  @@map("customers")
 }
 
-// Loại phòng
-model RoomType {
-  id            String    @id @default(uuid())
-  name          String    @unique
-  description   String?   @db.Text
-  basePrice     Decimal   @db.Decimal(10, 2)
-  maxOccupancy  Int       @db.SmallInt
-  photoUrls     String  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  rooms         Room[]
-  seasonalRates SeasonalRate[]
-  amenities RoomTypeAmenity[]
-  @@index([name])
-  @@map("room_types")
-}
-
-model RoomTypeAmenity {
-  id          String    @id @default(uuid())
-  roomTypeId  String
-  amenityId   String
-  createdAt   DateTime  @default(now())
-
-  roomType    RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
-  amenity     Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
-
-  @@unique([roomTypeId, amenityId])
-  @@map("room_type_amenities")
-}
-
-
-// Tiện nghi
-model Amenity {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  description String?   @db.Text
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-    roomTypes RoomTypeAmenity[]
-  @@index([name])
-  @@map("amenities")
-}
-
-// Phòng
-model Room {
-  id          String      @id @default(uuid())
-  roomNumber  String      @unique
-  floor       Int         @db.SmallInt
-  status      RoomStatus  @default(AVAILABLE)
-  notes       String?     @db.Text
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  roomTypeId  String
-  roomType    RoomType    @relation(fields: [roomTypeId], references: [id])
-  bookingItems BookingItem[]
-  maintenanceRecords MaintenanceRecord[]
-  images     RoomImage[]
-  @@index([roomNumber, status])
-  @@map("rooms")
-}
-
-model RoomImage {
-  id        String   @id @default(uuid())
-  imageUrl  String  
-  roomId    String 
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  @@index([roomId]) 
-  @@map("room_images")
-}
-
-
-
-// Đặt phòng
-model Booking {
-  id              String          @id @default(uuid())
-  bookingDate     DateTime        @default(now())
-  checkInDate     DateTime
-  checkOutDate    DateTime
-  totalGuests     Int             @db.SmallInt
-  specialRequests String?         @db.Text
-  status          BookingStatus   @default(PENDING)
-  bookingSource   BookingSource   @default(DIRECT)
-  totalAmount     Decimal         @db.Decimal(10, 2)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  customerId      String
-  customer        Customer        @relation(fields: [customerId], references: [id])
-  discountId      String?
-  discount        Discount?       @relation(fields: [discountId], references: [id])
-  bookingItems    BookingItem[]
-  payments        Payment[]
-  reviews         Review[]
-
-  @@index([bookingDate, status, customerId])
-  @@map("bookings")
-}
-
-// Chi tiết đặt phòng
-model BookingItem {
-  id            String   @id @default(uuid())
-  pricePerNight Decimal  @db.Decimal(10, 2)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  bookingId     String
-  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  roomId        String
-  room          Room     @relation(fields: [roomId], references: [id])
-
-  @@unique([bookingId, roomId])
-  @@index([bookingId, roomId])
-  @@map("booking_items")
-}
-
-// Thanh toán
-model Payment {
-  id              String        @id @default(uuid())
-  amount          Decimal       @db.Decimal(10, 2)
-  paymentDate     DateTime      @default(now())
-  paymentMethod   PaymentMethod
-  transactionId   String?       // Bắt buộc cho một số phương thức
-  status          PaymentStatus @default(PENDING)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  bookingId       String
-  booking         Booking       @relation(fields: [bookingId], references: [id])
-
-  @@index([bookingId, status])
-  @@map("payments")
-}
-
-// Đánh giá
-model Review {
-  id          String   @id @default(uuid())
-  rating      Int      @db.SmallInt // 1-5, kiểm tra trong logic ứng dụng
-  comment     String?  @db.Text
-  reviewDate  DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  customerId  String
-  customer    Customer @relation(fields: [customerId], references: [id])
-  bookingId   String
-  booking     Booking  @relation(fields: [bookingId], references: [id])
-
-  @@index([customerId, bookingId])
-  @@map("reviews")
-}
-
-// Giá theo mùa
-model SeasonalRate {
-  id          String   @id @default(uuid())
-  startDate   DateTime
-  endDate     DateTime
-  multiplier  Decimal  @db.Decimal(5, 2) // Nhân với giá cơ bản
-  seasonName  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  roomTypeId  String
-  roomType    RoomType @relation(fields: [roomTypeId], references: [id])
-
-  @@index([roomTypeId, startDate, endDate])
-  @@map("seasonal_rates")
-}
-
-
-model MaintenanceRecord {
-  id          String            @id @default(uuid())
-  description String            @db.Text
-  startDate   DateTime
-  endDate     DateTime?
-  status      MaintenanceStatus @default(SCHEDULED)
-  cost        Decimal?          @db.Decimal(10, 2)
-  notes       String?           @db.Text
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  roomId      String
-  room        Room              @relation(fields: [roomId], references: [id])
-
-  @@index([roomId, status])
-  @@map("maintenance_records")
-}
-
-// Nhân viên
-model Employee {
-  id          String         @id @default(uuid())
-  userId      String         @unique
-  position    String
-  department  Department
-  hireDate    DateTime
-  
-  // Relations
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roles       EmployeeRole[]
-
-  @@map("employees")
-}
-
-model Role {
-  id          String   @id @default(uuid())
-  name        String   @unique 
-  permissions Json    
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  employees   EmployeeRole[]
-  
-  @@map("roles")
-}
-
-model EmployeeRole {
-  id          String   @id @default(uuid())
-  createdAt   DateTime @default(now())
-  
-  employeeId  String
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  roleId      String
-  role        Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  
-  @@unique([employeeId, roleId])
-  @@map("employee_roles")
-}
-
-// Khuyến mãi
-model Discount {
-  id          String   @id @default(uuid())
-  code        String   @unique
-  percentage  Decimal  @db.Decimal(5, 2) // Phần trăm giảm giá
-  validFrom   DateTime
-  validTo     DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  bookings    Booking[]
-
-  @@index([code, validFrom, validTo])
-  @@map("discounts")
-}
-
-// Nhật ký kiểm tra
-model AuditLog {
-  id          String   @id @default(uuid())
-  action      String   // Ví dụ: "CREATE_BOOKING", "UPDATE_PAYMENT"
-  entity      String   // Ví dụ: "Booking", "Payment"
-  entityId    String   // ID của thực thể
-  userId      String?  // Có thể là Customer hoặc Employee
-  userType    String?  // "Customer", "Employee", hoặc "System"
-  details     String?  @db.Text // Chi tiết hành động
-  createdAt   DateTime @default(now())
-
-  @@index([entity, entityId, createdAt])
-  @@map("audit_logs")
-}
-
-// Enum trạng thái phòng
 enum RoomStatus {
   AVAILABLE
   OCCUPIED
   MAINTENANCE
 }
 
-// Enum trạng thái đặt phòng
 enum BookingStatus {
   PENDING
   CONFIRMED
@@ -333,7 +310,6 @@ enum BookingStatus {
   NO_SHOW
 }
 
-// Enum nguồn đặt phòng
 enum BookingSource {
   DIRECT
   WEBSITE
@@ -343,7 +319,6 @@ enum BookingSource {
   BOOKING_PLATFORM
 }
 
-// Enum phương thức thanh toán
 enum PaymentMethod {
   CASH
   CREDIT_CARD
@@ -352,10 +327,8 @@ enum PaymentMethod {
   PAYPAL
   MOBILE_PAYMENT
   QR_CODE
-  
 }
 
-// Enum trạng thái thanh toán
 enum PaymentStatus {
   PENDING
   COMPLETED
@@ -363,24 +336,15 @@ enum PaymentStatus {
   REFUNDED
 }
 
-// Enum phòng ban
 enum Department {
   FRONT_DESK
   MAINTENANCE
   MANAGEMENT
 }
 
-// Enum trạng thái bảo trì
 enum MaintenanceStatus {
   SCHEDULED
   IN_PROGRESS
   COMPLETED
   CANCELLED
-}
-
-// Enum trạng thái nhân viên
-enum EmployeeStatus {
-  ACTIVE
-  INACTIVE
-  TERMINATED
 }
