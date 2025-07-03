@@ -5,11 +5,12 @@ import {
   getAllDiscount,
   DeleteDisCount,
 } from "../controller/discount.Controller.js";
+import { authEmployee } from "../lib/authEmployee.js";
 
 const disCoutRouter = express.Router();
 
-disCoutRouter.post("/", discounts);
-disCoutRouter.get("/", getDiscountController);
-disCoutRouter.get("/getAll", getAllDiscount);
-disCoutRouter.delete("/:id", DeleteDisCount);
+disCoutRouter.post("/", authEmployee, discounts);
+disCoutRouter.get("/", authEmployee, getDiscountController);
+disCoutRouter.get("/getAll", authEmployee, getAllDiscount);
+disCoutRouter.delete("/:id", authEmployee, DeleteDisCount);
 export default disCoutRouter;

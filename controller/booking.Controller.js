@@ -1,3 +1,4 @@
+import { hasUserPermission } from "../lib/hasUserPermission.js";
 import {
   bookingService,
   bookingToEmpoyeeService,
@@ -85,8 +86,7 @@ export async function bookingToEmpoyee(req, res) {
     pricePerNight,
     roomId,
   } = req.body;
-  console.log(req.body, "hihi");
-
+  const user = req.user;
   try {
     const data = await bookingToEmpoyeeService({
       customerId,
@@ -99,6 +99,9 @@ export async function bookingToEmpoyee(req, res) {
       pricePerNight,
       roomId,
     });
+    if (!hasUserPermission(user, "BOOKING_CREATE")) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
     return res.status(201).json({ message: "Đặt phòng thành công", data });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -107,6 +110,10 @@ export async function bookingToEmpoyee(req, res) {
 
 export async function confirmStatus(req, res) {
   const { id } = req.params;
+  const user = req.user;
+  if (!hasUserPermission(user, "BOOKING_UPDATE")) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
   try {
     const result = await confirmStatusService(id);
     return res.status(200).json({ success: true, data: result });
@@ -117,6 +124,10 @@ export async function confirmStatus(req, res) {
 
 export async function cancelledBooking(req, res) {
   const { id } = req.params;
+  const user = req.user;
+  if (!hasUserPermission(user, "BOOKING_UPDATE")) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
   try {
     const data = await CancelledBookingService(id);
     return res.status(200).json({ success: true, data });

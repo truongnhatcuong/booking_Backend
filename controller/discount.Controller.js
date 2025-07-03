@@ -1,3 +1,4 @@
+import { hasUserPermission } from "../lib/hasUserPermission.js";
 import {
   CreateDiscountService,
   DeleteDisCountService,
@@ -7,6 +8,12 @@ import {
 
 export async function discounts(req, res) {
   const { code, percentage, validFrom, validTo } = req.body;
+
+  if (!hasUserPermission(req.user, "REPORT_VIEW ")) {
+    return res
+      .status(403)
+      .json({ message: "Bạn không có quyền tạo mã giảm giá" });
+  }
   try {
     const discount = await CreateDiscountService({
       code,
@@ -14,7 +21,7 @@ export async function discounts(req, res) {
       validFrom,
       validTo,
     });
-    res.status(201).json({ discount, message: "thành công" });
+    res.status(201).json({ discount, message: "Thêm Mã Giảm Giá Thành Công!" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

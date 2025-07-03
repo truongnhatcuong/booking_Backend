@@ -75,7 +75,7 @@ export async function login({ email, password, remember }) {
 
   const verifyPassword = await bcrypt.compareSync(password, user.password);
   if (!verifyPassword) {
-    throw new NotFoundError("Mật Khẩu Không Chính Xác");
+    throw new NotFoundError("Mật khẩu không chính xác");
   }
   const expiresIn = remember ? "1d" : "1h";
 
@@ -83,7 +83,7 @@ export async function login({ email, password, remember }) {
     expiresIn,
   });
 
-  return { accessToken: token, user };
+  return { accessToken: token };
 }
 
 export async function updateUser(

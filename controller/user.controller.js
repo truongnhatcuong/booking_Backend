@@ -38,6 +38,7 @@ export default async function signUpController(req, res) {
 export async function loginController(req, res) {
   try {
     const { email, password, remember } = req.body;
+    console.log("LOGIN BODY", req.body);
     if (!email || !password) {
       return res
         .status(400)
@@ -45,6 +46,9 @@ export async function loginController(req, res) {
     }
     const { accessToken } = await login({ email, password, remember });
 
+    if (!accessToken) {
+      return res.status(401).json({ message: "Đăng nhập không thành công" });
+    }
     const maxAgeChange =
       remember === true ? 3 * 60 * 60 * 1000 : 60 * 60 * 1000;
     res.cookie("token", accessToken, {
@@ -84,6 +88,10 @@ export async function getUserController(req, res) {
   try {
     const userId = req.user.id;
     const user = await getUser(userId);
+
+    if (!user || !userId) {
+      return res.status(404).json(null);
+    }
 
     return res.status(200).json(user);
   } catch (err) {
