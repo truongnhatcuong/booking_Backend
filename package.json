@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "build": "prisma generate --schema=src/prisma/schema.prisma",
+    "build": "prisma generate --schema=prisma/schema.prisma",
     "server": "nodemon server.js"
   },
   "keywords": [],
