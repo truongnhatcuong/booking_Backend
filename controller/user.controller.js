@@ -53,7 +53,7 @@ export async function loginController(req, res) {
       remember === true ? 3 * 60 * 60 * 1000 : 60 * 60 * 1000;
     res.cookie("token", accessToken, {
       httpOnly: true,
-      secure: true, // bắt buộc khi dùng cross-site & HTTPS
+      secure: process.env.NODE_ENV === "production",
       sameSite: "none", // bắt buộc để gửi cross-origin
       path: "/",
       maxAge: maxAgeChange, // ví dụ 1 ngày
