@@ -111,5 +111,6 @@ export async function getBookedDatesService(roomId) {
   return bookings.map((booking) => ({
     start: new Date(booking.checkInDate).toISOString().split("T")[0],
     end: new Date(booking.checkOutDate).toISOString().split("T")[0],
+    status: booking.status,
   }));
 }

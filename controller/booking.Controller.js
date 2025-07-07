@@ -19,15 +19,7 @@ export async function CustomerBooking(req, res) {
       .status(403)
       .json({ message: "Tài khoản của bạn không phải khách hàng" });
   }
-  let customerId = null;
-
-  if (req.user?.customer?.id) {
-    customerId = req.user.customer.id;
-  }
-  // Nếu không có user, thử lấy từ body
-  else if (req.body.customerId) {
-    customerId = req.body.customerId;
-  }
+  const customerId = req.user.customer.id;
 
   if (!customerId) {
     return res.status(400).json({ message: "Customer ID is required" });

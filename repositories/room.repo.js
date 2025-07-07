@@ -166,6 +166,7 @@ export async function getRoomCustomerRepo() {
       id: true,
       roomNumber: true,
       roomTypeId: true,
+      status: true,
       images: {
         select: {
           id: true,
@@ -273,6 +274,7 @@ export async function findBookedDateRangesRepo(roomId) {
     select: {
       checkInDate: true,
       checkOutDate: true,
+      status: true,
     },
   });
 }
