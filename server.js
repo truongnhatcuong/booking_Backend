@@ -21,10 +21,7 @@ const port = process.env.PORT || 5001;
 app.use(express.json());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || [
-      "http://localhost:3000",
-      "https://booking-fontend-gray.vercel.app",
-    ],
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
     exposedHeaders: ["set-cookie"], // Quan trọng cho FE nhận cookie
   })
