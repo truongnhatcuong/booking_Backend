@@ -55,7 +55,7 @@ export async function loginController(req, res) {
       httpOnly: true,
       secure: true, // bắt buộc khi dùng cross-site & HTTPS
       sameSite: "none", // bắt buộc để gửi cross-origin
-      domain: process.env.FRONTEND_URL,
+      path: "/",
       maxAge: maxAgeChange, // ví dụ 1 ngày
     });
 
