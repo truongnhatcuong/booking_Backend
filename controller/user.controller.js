@@ -53,10 +53,11 @@ export async function loginController(req, res) {
       remember === true ? 3 * 60 * 60 * 1000 : 60 * 60 * 1000;
     res.cookie("token", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: maxAgeChange,
-      sameSite: "lax",
+      secure: true, // bắt buộc khi dùng cross-site & HTTPS
+      sameSite: "none", // bắt buộc để gửi cross-origin
+      maxAge: maxAgeChange, // ví dụ 1 ngày
     });
+
     return res
       .status(200)
       .json({ accessToken, message: "Đăng Nhập Thành Công" });
