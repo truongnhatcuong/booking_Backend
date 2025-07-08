@@ -55,7 +55,6 @@ export async function loginController(req, res) {
       httpOnly: true,
       secure: true,
       sameSite: "none", // ⚡ Nếu FE khác domain
-      path: "/",
       maxAge: maxAgeChange, // ví dụ 1 ngày
     });
 
