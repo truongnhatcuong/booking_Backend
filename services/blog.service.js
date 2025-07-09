@@ -2,12 +2,18 @@ import {
   createBlogRepo,
   getBlogEmployeeRepo,
   getBlogRepo,
+  getBlogToSlugRepo,
   publishedBlogRepo,
 } from "../repositories/blog.repo.js";
 
 export async function getBlogService() {
   const blog = await getBlogRepo();
   return blog;
+}
+
+export async function getBlogToSlugService(slug) {
+  const blogToSlug = await getBlogToSlugRepo(slug);
+  return blogToSlug;
 }
 
 export async function getBlogEmployeeService() {

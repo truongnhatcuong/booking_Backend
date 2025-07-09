@@ -5,6 +5,23 @@ export async function getBlogRepo() {
     where: {
       published: true,
     },
+    select: {
+      id: true,
+      coverImage: true,
+      slug: true,
+      title: true,
+      summary: true,
+    },
+  });
+  return blog;
+}
+
+export async function getBlogToSlugRepo(slug) {
+  const blog = await prisma.blogPost.findUnique({
+    where: {
+      slug,
+      published: true,
+    },
   });
   return blog;
 }

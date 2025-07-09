@@ -3,6 +3,7 @@ import {
   createBlogService,
   getBlogEmployeeService,
   getBlogService,
+  getBlogToSlugService,
   publishedBlogService,
 } from "../services/blog.service.js";
 
@@ -10,6 +11,16 @@ export async function getBlog(req, res) {
   try {
     const getBlog = await getBlogService(req.body);
     return res.status(200).json(getBlog);
+  } catch (error) {
+    return res.status(400).json(error);
+  }
+}
+
+export async function getBlogToSlug(req, res) {
+  const { slug } = req.params;
+  try {
+    const BlogToSlug = await getBlogToSlugService(slug);
+    return res.status(200).json(BlogToSlug);
   } catch (error) {
     return res.status(400).json(error);
   }
