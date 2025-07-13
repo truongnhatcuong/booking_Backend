@@ -39,8 +39,8 @@ export async function payMentBookingService({
   }
 
   if (paymentMethod === "QR_CODE") {
-    const returnUrl = `${process.env.NEXT_PUBLIC_URL}/payment/success`;
-    const cancelUrl = `${process.env.NEXT_PUBLIC_URL}/payment/cancel`;
+    const returnUrl = `${process.env.FRONTEND_URL}/payment/success`;
+    const cancelUrl = `${process.env.FRONTEND_URL}/payment/cancel`;
 
     // Generate a safe orderCode (< 9007199254740991)
     const orderCode = Math.floor(Math.random() * 1e12);

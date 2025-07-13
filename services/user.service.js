@@ -77,10 +77,9 @@ export async function login({ email, password, remember }) {
   if (!verifyPassword) {
     throw new NotFoundError("Mật khẩu không chính xác");
   }
-  const expiresIn = remember ? "1d" : "1h";
 
   const token = jwt.sign({ id: user.id, userType: user.userType }, JWT_SECRET, {
-    expiresIn,
+    expiresIn: remember === true ? "3h" : "1h",
   });
 
   return { accessToken: token };

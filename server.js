@@ -15,6 +15,7 @@ import routerMaintenance from "./api/maintenance.route.js";
 import routerRoleEmployee from "./api/RoleEmployee.route.js";
 import dashboardRouter from "./api/statistical.route.js";
 import blogRoute from "./api/blog.route.js";
+import routerOpenAi from "./api/openAl.route.js";
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -45,6 +46,7 @@ app.use("/api/maintenance", routerMaintenance);
 app.use("/api/role", routerRoleEmployee);
 app.use("/api", dashboardRouter);
 app.use("/api/blog", blogRoute);
+app.use("/api/chatai", routerOpenAi);
 app.listen(port, () => {
   console.log("server started run :" + port);
 });

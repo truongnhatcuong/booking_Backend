@@ -8,7 +8,7 @@ import { authAdmin } from "../lib/authAdmin.js";
 
 const employeeRouter = express.Router();
 
-employeeRouter.post("/employee", authAdmin, employeeRegister);
+employeeRouter.post("/employee", employeeRegister);
 employeeRouter.get("/employee", getAllEmployee);
 employeeRouter.put("/employee/disabled/:id", authAdmin, disableUser);
 employeeRouter.delete("/employee/:id", DeleteEmployeeCotroller);

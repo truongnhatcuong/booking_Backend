@@ -51,6 +51,7 @@ export async function loginController(req, res) {
     }
     const maxAgeChange =
       remember === true ? 3 * 60 * 60 * 1000 : 60 * 60 * 1000;
+
     res.cookie("token", accessToken, {
       httpOnly: true,
       secure: true,

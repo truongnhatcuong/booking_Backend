@@ -33,7 +33,6 @@ export async function createRoom(req, res) {
 export async function getAllRoom(req, res) {
   const { checkIn, checkOut, customer, roomType, search, page, limit } =
     req.query;
-  console.log(checkIn, checkOut, customer, roomType);
 
   try {
     const room = await getAllRoomService(
@@ -100,8 +99,15 @@ export async function addImageToRoom(req, res) {
 }
 
 export async function getRoomCustomer(req, res) {
+  const { checkIn, checkOut, customer, roomType } = req.query;
   try {
-    const roomCustomer = await getRoomCustomerService(req);
+    const roomCustomer = await getRoomCustomerService(
+      checkIn,
+      checkOut,
+      customer,
+      roomType
+    );
+    console.log("thong tin : " + checkIn, checkOut, customer, roomType);
     return res.status(200).json(roomCustomer);
   } catch (error) {
     return res.status(500).json({ message: error.message });

@@ -160,8 +160,47 @@ export async function addImageToRoomRepo(data) {
 }
 
 // dành cho khách hàng
-export async function getRoomCustomerRepo() {
+export async function getRoomCustomerRepo(
+  checkIn,
+  checkOut,
+  customer,
+  roomType
+) {
+  const checkInDate = new Date(checkIn);
+  const checkOutDate = new Date(checkOut);
+
+  const where = {
+    // ROOM TYPE
+    ...(roomType || customer
+      ? {
+          roomType: {
+            ...(roomType && { name: roomType }),
+            ...(customer && {
+              maxOccupancy: { gte: Number(customer) },
+            }),
+          },
+        }
+      : {}),
+
+    // DATE RANGE
+    ...(checkIn &&
+      checkOut &&
+      !isNaN(checkInDate.getTime()) &&
+      !isNaN(checkOutDate.getTime()) && {
+        bookingItems: {
+          none: {
+            booking: {
+              AND: [
+                { checkInDate: { lt: checkOutDate } },
+                { checkOutDate: { gt: checkInDate } },
+              ],
+            },
+          },
+        },
+      }),
+  };
   return prisma.room.findMany({
+    where,
     select: {
       id: true,
       roomNumber: true,

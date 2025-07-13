@@ -1,3 +1,4 @@
+import NotFoundError from "../errors/not-found.error.js";
 import {
   addImageToRoomRepo,
   createRoomRepo,
@@ -91,8 +92,18 @@ export async function addRoomImageService({ roomId, imageUrls }) {
   return addedImage;
 }
 
-export async function getRoomCustomerService() {
-  const getRoomCustomer = await getRoomCustomerRepo();
+export async function getRoomCustomerService(
+  checkIn,
+  checkOut,
+  customer,
+  roomType
+) {
+  const getRoomCustomer = await getRoomCustomerRepo(
+    checkIn,
+    checkOut,
+    customer,
+    roomType
+  );
   return getRoomCustomer;
 }
 
