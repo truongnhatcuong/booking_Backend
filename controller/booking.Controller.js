@@ -6,6 +6,7 @@ import {
   confirmStatusService,
   getAllBookingService,
   getBookingForUserService,
+  removeBookingEmployeeService,
   removeBookingUserService,
 } from "../services/booking.service.js";
 
@@ -91,6 +92,7 @@ export async function bookingToEmpoyee(req, res) {
       pricePerNight,
       roomId,
     });
+
     if (!hasUserPermission(user, "BOOKING_CREATE")) {
       return res.status(403).json({ message: "Forbidden" });
     }
@@ -146,6 +148,22 @@ export async function removeBookingUser(req, res) {
   }
   try {
     const data = await removeBookingUserService(id);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+}
+
+export async function removeBookingEmployee(req, res) {
+  const { id } = req.params;
+  const user = req.user;
+
+  if (!hasUserPermission(user, "BOOKING_DELETE")) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  try {
+    const data = await removeBookingEmployeeService(id);
     return res.status(200).json({ success: true, data });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });

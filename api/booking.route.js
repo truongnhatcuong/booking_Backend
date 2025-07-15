@@ -7,6 +7,7 @@ import {
   cancelledBooking,
   getBookingForUser,
   removeBookingUser,
+  removeBookingEmployee,
 } from "../controller/booking.Controller.js";
 import { authCustomer } from "../lib/authCustomer.js";
 import { authEmployee } from "../lib/authEmployee.js";
@@ -20,4 +21,5 @@ RouterBooking.get("/bookingUser", authCustomer, getBookingForUser);
 RouterBooking.put("/:id", authEmployee, confirmStatus);
 RouterBooking.put("/cancelled/:id", authEmployee, cancelledBooking);
 RouterBooking.delete("/:id", authCustomer, removeBookingUser);
+RouterBooking.delete("/employee/:id", authEmployee, removeBookingEmployee);
 export default RouterBooking;

@@ -78,6 +78,7 @@ export async function getAllEmployeeRepo() {
           position: true,
           roles: {
             select: {
+              id: true,
               role: {
                 select: {
                   name: true,

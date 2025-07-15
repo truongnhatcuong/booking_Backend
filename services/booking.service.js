@@ -57,7 +57,7 @@ export async function bookingService({
     customerId,
     checkInDate,
     checkOutDate,
-    totalGuests,
+    totalGuests: totalGuests ? Number(totalGuests) : null,
     specialRequests,
     bookingSource,
     totalAmount,
@@ -140,7 +140,8 @@ export async function bookingToEmpoyeeService({
     specialRequests,
     bookingSource,
     totalAmount: totalAmount || 0,
-    discountId: discount.id || null,
+    discountId: discount ? discount.id : null,
+
     pricePerNight,
     roomId,
   });
@@ -169,6 +170,15 @@ export async function getBookingForUserService(id) {
 }
 
 export async function removeBookingUserService(id) {
+  const result = await removeBookingUserRepo(id);
+  if (!result) {
+    throw new NotFoundError("Không tìm thấy đặt phòng");
+  }
+  await logCancelBooking(result.customer.user, result);
+  return result;
+}
+
+export async function removeBookingEmployeeService(id) {
   const result = await removeBookingUserRepo(id);
   if (!result) {
     throw new NotFoundError("Không tìm thấy đặt phòng");
