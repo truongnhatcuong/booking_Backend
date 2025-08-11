@@ -4,12 +4,12 @@ import employeeRegister, {
   getAllEmployee,
   disableUser,
 } from "../controller/employee.Controller.js";
-import { authAdmin } from "../lib/authAdmin.js";
+import { authEmployee } from "../lib/authEmployee.js";
 
 const employeeRouter = express.Router();
 
 employeeRouter.post("/employee", employeeRegister);
 employeeRouter.get("/employee", getAllEmployee);
-employeeRouter.put("/employee/disabled/:id", authAdmin, disableUser);
+employeeRouter.put("/employee/disabled/:id", authEmployee, disableUser);
 employeeRouter.delete("/employee/:id", DeleteEmployeeCotroller);
 export default employeeRouter;

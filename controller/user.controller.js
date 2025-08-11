@@ -8,6 +8,7 @@ import {
 import signUp, {
   changePasswordService,
   createCustomerService,
+  disableUserService,
   forgotPasswordService,
   getAllCustomerService,
   getUser,
@@ -102,8 +103,8 @@ export async function getUserController(req, res) {
 }
 
 export async function getAllCustomer(req, res) {
-  const { idNumber } = req.query;
-  const customer = await getAllCustomerService(idNumber);
+  const { searchName, idNumber } = req.query;
+  const customer = await getAllCustomerService(searchName, idNumber);
   return res.status(200).json({ customer, message: "thành Công" });
 }
 
@@ -167,3 +168,21 @@ export const resetPassword = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+export async function disableUser(req, res) {
+  try {
+    const userId = req.params.id;
+    if (!hasUserPermission(req.user, "CUSTOMER_UPDATE")) {
+      return res
+        .status(403)
+        .json({ message: "Bạn không có quyền vô hiệu hóa người dùng" });
+    }
+    const updatedUser = await disableUserService(userId);
+    return res.status(200).json({
+      message: `Người dùng với ID ${userId} đã được vô hiệu hóa thành công`,
+      user: updatedUser,
+    });
+  } catch (error) {
+    return res.status(404).json({ message: error.message });
+  }
+}

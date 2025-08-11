@@ -4,6 +4,7 @@ import {
   changePasswordRepo,
   createCustomerRepo,
   createUser,
+  disableUserRepo,
   findUserByEmail,
   getAllCustomerRepo,
   getUserToken,
@@ -78,9 +79,17 @@ export async function login({ email, password, remember }) {
     throw new NotFoundError("Mật khẩu không chính xác");
   }
 
-  const token = jwt.sign({ id: user.id, userType: user.userType }, JWT_SECRET, {
-    expiresIn: remember === true ? "3h" : "1h",
-  });
+  const token = jwt.sign(
+    {
+      id: user.id,
+      userType: user.userType,
+      lastName: user.lastName,
+    },
+    JWT_SECRET,
+    {
+      expiresIn: remember === true ? "3h" : "1h",
+    }
+  );
 
   return { accessToken: token };
 }
@@ -110,8 +119,8 @@ export async function getUser(userId) {
   return user;
 }
 
-export async function getAllCustomerService(isNumber) {
-  const result = await getAllCustomerRepo(isNumber);
+export async function getAllCustomerService(searchName, idNumber) {
+  const result = await getAllCustomerRepo(searchName, idNumber);
   return result;
 }
 
@@ -163,3 +172,11 @@ export const resetPasswordService = async (token, password) => {
     throw new Error("Invalid or expired token", err);
   }
 };
+
+export async function disableUserService(userId) {
+  const user = await getUserToken(userId);
+  if (!user) throw new NotFoundError("Người dùng không tồn tại");
+
+  const updatedUser = await disableUserRepo(userId);
+  return updatedUser;
+}

@@ -251,7 +251,6 @@ export async function getBookingForUserRepo(id) {
             select: {
               roomNumber: true,
               floor: true,
-
               roomType: {
                 select: {
                   name: true,

@@ -52,13 +52,33 @@ export async function getUserToken(userId) {
   });
 }
 
-export async function getAllCustomerRepo(idNumber) {
+export async function getAllCustomerRepo(searchName, idNumber) {
   return await prisma.user.findMany({
     where: {
       userType: "CUSTOMER",
-      customer: {
-        idNumber,
-      },
+      AND: [
+        {
+          OR: [
+            {
+              firstName: {
+                contains: searchName || "",
+              },
+            },
+            {
+              lastName: {
+                contains: searchName || "",
+              },
+            },
+            {
+              customer: {
+                idNumber: {
+                  contains: idNumber || "",
+                },
+              },
+            },
+          ],
+        },
+      ],
     },
     select: {
       id: true,
@@ -125,6 +145,23 @@ export async function updateUserPassword(id, hashedPassword) {
     },
     data: {
       password: hashedPassword,
+    },
+  });
+}
+
+export async function disableUserRepo(userId) {
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { status: true },
+  });
+  const newStatus = currentUser.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+
+  return await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      status: newStatus,
     },
   });
 }

@@ -2,6 +2,7 @@ import NotFoundError from "../errors/not-found.error.js";
 import {
   CreateRoleEmployeeRepo,
   GetRoleEmployeeRepo,
+  RemoveEmployeeRoleRepo,
   RoleEmployeeRepo,
 } from "../repositories/roleEmployee.repo.js";
 
@@ -45,5 +46,10 @@ export async function DeleteRoleEmployeeService(id) {
 
 export async function RoleEmployeeService(idEmployee, idRole) {
   const result = await RoleEmployeeRepo(idEmployee, idRole);
+  return result;
+}
+
+export async function RemoveEmployeeRoleService(id) {
+  const result = await RemoveEmployeeRoleRepo(id);
   return result;
 }

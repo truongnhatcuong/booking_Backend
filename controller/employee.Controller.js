@@ -1,3 +1,4 @@
+import { hasUserPermission } from "../lib/hasUserPermission.js";
 import { employeeSchema } from "../schemas/EmployeeSchema.js";
 import {
   createEmployeeService,
@@ -23,7 +24,6 @@ export default async function employeeRegister(req, res) {
 
 export async function DeleteEmployeeCotroller(req, res) {
   const { id } = req.params;
-  console.log(id);
 
   try {
     const result = await DeleteEmployeeService(id);
@@ -48,6 +48,11 @@ export async function getAllEmployee(req, res) {
 export async function disableUser(req, res) {
   const { action } = req.body;
   const { id } = req.params;
+  if (!hasUserPermission(req.user, "USER_UPDATE")) {
+    return res
+      .status(403)
+      .json({ message: "Bạn không có quyền cập nhật trạng thái người dùng" });
+  }
 
   try {
     const result = await disableService(id, action);

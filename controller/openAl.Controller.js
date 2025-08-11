@@ -1,32 +1,22 @@
-import { hotelAIService } from "../services/OpenAl.service.js";
+import { OpenAIService } from "../services/OpenAl.service.js";
 
 export async function chatController(req, res) {
+  const userId = req.user ? req.user.id : null; // Nếu không có token thì userId = null
   try {
-    const { question } = req.body;
+    const { message } = req.body;
 
-    // Simple validation
-    if (!question || question.trim().length === 0) {
+    if (!message) {
       return res.status(400).json({
         success: false,
-        message: "Vui lòng nhập câu hỏi",
+        message: "Message is required",
       });
     }
 
-    if (question.length > 500) {
-      return res.status(400).json({
-        success: false,
-        message: "Câu hỏi quá dài, vui lòng rút ngắn",
-      });
-    }
+    const response = await OpenAIService(message, userId);
 
-    // Call AI service
-    const answer = await hotelAIService(question);
-
-    // Return response
     return res.status(200).json({
       success: true,
-      question: question,
-      answer: answer,
+      data: response,
     });
   } catch (error) {
     console.error("Error in chatController:", error);

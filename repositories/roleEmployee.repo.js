@@ -35,3 +35,9 @@ export async function RoleEmployeeRepo(idEmployee, idRole) {
     },
   });
 }
+
+export async function RemoveEmployeeRoleRepo(id) {
+  return await prisma.employeeRole.delete({
+    where: { id },
+  });
+}
