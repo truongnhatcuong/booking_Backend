@@ -53,7 +53,7 @@ ${amenitiesList}
 Hình ảnh:
 ${imagesList}`;
     })
-    .join("\n\n");
+    .join("\n");
 }
 
 export async function OpenAIService(message) {
@@ -79,6 +79,5 @@ ${roomInfo}`,
     ],
   });
 
-  // 3. Trả về kết quả
   return completion.choices[0].message.content;
 }
