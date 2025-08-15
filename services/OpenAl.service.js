@@ -13,7 +13,10 @@ const openai = new OpenAI({
 // Lấy phòng trống từ DB
 async function getRoom() {
   const rooms = await prisma.room.findMany({
-    where: { status: "AVAILABLE" },
+    where: {
+      status: "AVAILABLE",
+    },
+
     select: {
       roomNumber: true,
       images: true,
@@ -30,14 +33,13 @@ async function getRoom() {
               },
             },
           },
+          maxOccupancy: true,
+          description: true,
+          name: true,
         },
       },
     },
   });
-
-  if (!rooms.length) {
-    return "Hiện không có phòng nào trống.";
-  }
 
   return rooms
     .map((r) => {
@@ -48,17 +50,35 @@ async function getRoom() {
       const imagesList = r.images.map((img) => `- ${img.imageUrl}`).join("\n");
 
       return `Phòng ${r.roomNumber}: ${r.roomType.basePrice} VNĐ/đêm
+Loại Phòng: ${r.roomType.name}
 Tiện nghi:
 ${amenitiesList}
+Số Khách Tối Đa:
+${r.roomType.maxOccupancy}
+Mô tả: ${r.roomType.description || "Không có mô tả"}
 Hình ảnh:
 ${imagesList}`;
     })
-    .join("\n");
+    .join("\n\n");
+}
+
+async function checkRoomAVAILABLE() {
+  const rooms = await prisma.room.findMany({
+    where: {
+      status: "AVAILABLE",
+    },
+  });
+
+  return {
+    count: rooms.length,
+  };
 }
 
 export async function OpenAIService(message) {
   // 1. Query DB trước
+
   const roomInfo = await getRoom();
+  const checkAvailable = await checkRoomAVAILABLE();
 
   // 2. Ghép dữ liệu vào prompt
   const completion = await openai.chat.completions.create({
@@ -70,7 +90,16 @@ export async function OpenAIService(message) {
 Nếu câu hỏi nằm ngoài thông tin này, hãy từ chối trả lời.
 
 Dữ liệu khách sạn:
-${roomInfo}`,
+thời gian ${new Date().getDay()}: Danh sách phòng: ${roomInfo}`,
+      },
+      {
+        role: "system",
+        content: `bạn không hỗ trợ đặt phòng chỉ hỗ trợ đưa ra thông tin để khách tham khảo`,
+      },
+      {
+        role: "system",
+        content: `Thông tin phòng trống:
+Số lượng phòng: ${checkAvailable.count}`,
       },
       {
         role: "user",

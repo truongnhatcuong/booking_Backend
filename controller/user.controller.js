@@ -103,8 +103,8 @@ export async function getUserController(req, res) {
 }
 
 export async function getAllCustomer(req, res) {
-  const { searchName, idNumber } = req.query;
-  const customer = await getAllCustomerService(searchName, idNumber);
+  const { search, page, limit } = req.query;
+  const customer = await getAllCustomerService(search, page, limit);
   return res.status(200).json({ customer, message: "thành Công" });
 }
 

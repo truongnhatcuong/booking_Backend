@@ -57,11 +57,21 @@ export async function findEmployeeByID(id) {
   });
 }
 
-export async function getAllEmployeeRepo() {
+export async function getAllEmployeeRepo(search, skip, take) {
   return await prisma.user.findMany({
     where: {
-      userType: "EMPLOYEE",
+      AND: [
+        { userType: "EMPLOYEE" },
+        {
+          OR: [
+            { firstName: { contains: search || "" } },
+            { lastName: { contains: search || "" } },
+          ],
+        },
+      ],
     },
+    skip: Number(skip),
+    take: Number(take),
     select: {
       id: true,
       email: true,
@@ -100,6 +110,28 @@ export async function disableRepo(id, action) {
     },
     data: {
       status: action,
+    },
+  });
+}
+
+export async function updateEmployeeRepo(id, employeeData) {
+  return await prisma.employee.update({
+    where: {
+      id,
+    },
+    include: {
+      user: true,
+    },
+    data: {
+      department: employeeData.department,
+      position: employeeData.position,
+      user: {
+        update: {
+          firstName: employeeData.firstName,
+          lastName: employeeData.lastName,
+          phone: employeeData.phone,
+        },
+      },
     },
   });
 }

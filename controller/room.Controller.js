@@ -40,7 +40,7 @@ export async function getAllRoom(req, res) {
       checkOut,
       customer,
       roomType,
-      search ? search : "",
+      search,
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 5
     );

@@ -5,11 +5,13 @@ import {
   findEmployeeByEmail,
   findEmployeeByID,
   getAllEmployeeRepo,
+  updateEmployeeRepo,
   updateTokenToDb,
 } from "../repositories/employee.repo.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import NotFoundError from "../errors/not-found.error.js";
+import { countUsers } from "../repositories/user.repo.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "";
 export async function createEmployeeService({
@@ -59,12 +61,33 @@ export async function DeleteEmployeeService(id) {
   return { deleteId: id };
 }
 
-export async function getAllEmployeeService() {
-  const employee = await getAllEmployeeRepo();
-  return employee;
+export async function getAllEmployeeService(search, page = 1, limit) {
+  const safePage = Math.max(Number(page) || 1, 1);
+  const safeLimit = Math.max(Number(limit) || 10, 1);
+  const skip = (safePage - 1) * safeLimit;
+
+  const [result, total] = await Promise.all([
+    getAllEmployeeRepo(search, skip, safeLimit),
+    countUsers("EMPLOYEE", search),
+  ]);
+  return {
+    result,
+    page: safePage,
+    limit: safeLimit,
+    total,
+    totalPages: Math.ceil(total / safeLimit),
+  };
 }
 
 export async function disableService(id, action) {
   const result = await disableRepo(id, action);
   return result;
+}
+
+export async function updateEmployeeService(id, employeeData) {
+  const updatedEmployee = await updateEmployeeRepo(id, employeeData);
+  if (!updatedEmployee) throw NotFoundError("Không tìm thấy Employee");
+  if (!updatedEmployee.user)
+    throw NotFoundError("Employee chưa có User gắn kèm");
+  return updatedEmployee;
 }

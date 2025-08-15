@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import {
   changePasswordRepo,
+  countUsers,
   createCustomerRepo,
   createUser,
   disableUserRepo,
@@ -119,9 +120,22 @@ export async function getUser(userId) {
   return user;
 }
 
-export async function getAllCustomerService(searchName, idNumber) {
-  const result = await getAllCustomerRepo(searchName, idNumber);
-  return result;
+export async function getAllCustomerService(search, page = 1, limit) {
+  const safePage = Math.max(Number(page) || 1, 1);
+  const safeLimit = Math.max(Number(limit) || 10, 1);
+  const skip = (safePage - 1) * safeLimit;
+
+  const [result, total] = await Promise.all([
+    getAllCustomerRepo(search, skip, safeLimit),
+    countUsers("CUSTOMER", search),
+  ]);
+  return {
+    result,
+    page: safePage,
+    limit: safeLimit,
+    total,
+    totalPages: Math.ceil(total / safeLimit),
+  };
 }
 
 export async function createCustomerService({

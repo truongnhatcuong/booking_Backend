@@ -109,7 +109,7 @@ export async function getAllRoomRepo(
         },
       },
     }),
-    prisma.room.count({ where }),
+    prisma.room.count(),
   ]);
 
   return {

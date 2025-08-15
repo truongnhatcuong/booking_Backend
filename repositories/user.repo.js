@@ -52,34 +52,34 @@ export async function getUserToken(userId) {
   });
 }
 
-export async function getAllCustomerRepo(searchName, idNumber) {
+export async function getAllCustomerRepo(search, skip, take) {
   return await prisma.user.findMany({
     where: {
       userType: "CUSTOMER",
-      AND: [
+      OR: [
         {
-          OR: [
-            {
-              firstName: {
-                contains: searchName || "",
-              },
+          firstName: {
+            contains: search || "",
+          },
+        },
+        {
+          lastName: {
+            contains: search || "",
+          },
+        },
+
+        {
+          customer: {
+            idNumber: {
+              contains: search || "",
             },
-            {
-              lastName: {
-                contains: searchName || "",
-              },
-            },
-            {
-              customer: {
-                idNumber: {
-                  contains: idNumber || "",
-                },
-              },
-            },
-          ],
+          },
         },
       ],
     },
+
+    skip: Number(skip),
+    take: Number(take),
     select: {
       id: true,
       email: true,
@@ -100,7 +100,22 @@ export async function getAllCustomerRepo(searchName, idNumber) {
     },
   });
 }
-
+export async function countUsers(userType, search) {
+  return prisma.user.count({
+    where: {
+      userType: userType || "CUSTOMER",
+      AND: [
+        {
+          OR: [
+            { firstName: { contains: search || "" } },
+            { lastName: { contains: search || "" } },
+            { customer: { idNumber: { contains: search || "" } } },
+          ],
+        },
+      ],
+    },
+  });
+}
 export async function createCustomerRepo(data) {
   const { firstName, lastName, email, phone, idNumber } = data;
   return prisma.user.create({
