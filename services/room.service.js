@@ -1,4 +1,3 @@
-import NotFoundError from "../errors/not-found.error.js";
 import {
   addImageToRoomRepo,
   createRoomRepo,
@@ -35,6 +34,7 @@ export async function getAllRoomService(
   checkIn,
   checkOut,
   customer,
+  status,
   roomType,
   search,
   page,
@@ -42,12 +42,18 @@ export async function getAllRoomService(
 ) {
   const skip = (page - 1) * limit;
   const take = limit;
+  const roomtypeArray = roomType
+    ? Array.isArray(roomType)
+      ? roomType
+      : [roomType]
+    : [];
 
   const { data, total } = await getAllRoomRepo(
     checkIn,
     checkOut,
     customer,
-    roomType,
+    status,
+    roomtypeArray,
     search,
     skip,
     take

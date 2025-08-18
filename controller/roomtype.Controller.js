@@ -50,6 +50,8 @@ export async function getRoomTypesById(req, res) {
 export async function updateRoomType(req, res) {
   const { id } = req.params;
   const parsed = RoomUpdateTypeSchema.safeParse(req.body);
+  console.log(req.body);
+
   if (!parsed.success) {
     return res.status(400).json({ message: parsed.error.issues[0].message });
   }

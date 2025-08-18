@@ -23,6 +23,7 @@ export async function getAllRoomRepo(
   checkIn,
   checkOut,
   customer,
+  status,
   roomType,
   search,
   skip,
@@ -32,18 +33,25 @@ export async function getAllRoomRepo(
   const checkOutDate = new Date(checkOut);
 
   const where = {
+    ...(status && { status }),
     // ROOM TYPE
-    ...(roomType || customer
+    ...(roomType && roomType.length > 0
       ? {
           roomType: {
-            ...(roomType && { name: roomType }),
+            name: { in: roomType }, // LUÔN dùng in: []
+
             ...(customer && {
               maxOccupancy: { gte: Number(customer) },
             }),
           },
         }
-      : {}),
-
+      : customer
+        ? {
+            roomType: {
+              maxOccupancy: { gte: Number(customer) },
+            },
+          }
+        : {}),
     // SEARCH
     ...(search && {
       roomNumber: {

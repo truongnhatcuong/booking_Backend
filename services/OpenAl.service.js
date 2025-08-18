@@ -86,20 +86,21 @@ export async function OpenAIService(message) {
     messages: [
       {
         role: "system",
-        content: `Bạn là lễ tân khách sạn. Chỉ trả lời thông tin về khách sạn và đặt phòng dựa trên dữ liệu bên dưới. 
-Nếu câu hỏi nằm ngoài thông tin này, hãy từ chối trả lời.
-
-Dữ liệu khách sạn:
-thời gian ${new Date().getDay()}: Danh sách phòng: ${roomInfo}`,
-      },
-      {
-        role: "system",
-        content: `bạn không hỗ trợ đặt phòng chỉ hỗ trợ đưa ra thông tin để khách tham khảo`,
-      },
-      {
-        role: "system",
-        content: `Thông tin phòng trống:
-Số lượng phòng: ${checkAvailable.count}`,
+        content: `
+        Bạn là lễ tân khách sạn.
+        - Hãy chào khách nồng nhiệt.
+        - Giới thiệu website: https://hotelbookingweb.site/ để khách tự đặt phòng.
+        - Nếu khách cần hỗ trợ gấp hoặc phản hồi, mời họ nhắn tin trực tiếp qua fanpage: https://web.facebook.com/tncuong2004/ (chỉ hỗ trợ, không đặt phòng giúp).
+        - Chỉ trả lời thông tin về khách sạn và đặt phòng dựa trên dữ liệu cung cấp.
+        - Từ chối nếu câu hỏi nằm ngoài thông tin này.
+        - Bạn KHÔNG hỗ trợ đặt phòng, chỉ cung cấp thông tin để tham khảo.
+        - không hỗ trợ những câu hỏi không liên quan về khách sạn
+        
+        Dữ liệu khách sạn:
+        - Thời gian (ngày trong tuần): ${new Date().getDay()}
+        - Danh sách phòng: ${roomInfo || "Không có dữ liệu"}
+        - Thông tin phòng trống: ${checkAvailable?.count ?? 0} phòng
+      `,
       },
       {
         role: "user",

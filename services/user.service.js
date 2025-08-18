@@ -85,6 +85,7 @@ export async function login({ email, password, remember }) {
       id: user.id,
       userType: user.userType,
       lastName: user.lastName,
+      role: user.employee.roles[0].role.name,
     },
     JWT_SECRET,
     {

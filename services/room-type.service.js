@@ -18,6 +18,7 @@ export async function createRoomTypeService({
   maxOccupancy,
   photoUrls,
 }) {
+  const price = Number(basePrice);
   const existingNameRoomType = await findNameRoomTypeRepo(name);
   if (existingNameRoomType) {
     throw new NotFoundError("Tên loại phòng đã tồn tại");
@@ -25,7 +26,7 @@ export async function createRoomTypeService({
   const createRoomType = await createRoomTypeRepo({
     name,
     description,
-    basePrice,
+    price,
     maxOccupancy,
     photoUrls,
   });
@@ -58,7 +59,7 @@ export async function updateRoomTypeService(
   const updateRoomtype = await updateRoomTypeRepo(id, {
     name,
     description,
-    basePrice,
+    basePrice: Number(basePrice),
     maxOccupancy,
     photoUrls,
   });

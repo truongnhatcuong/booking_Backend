@@ -31,7 +31,7 @@ export async function createRoom(req, res) {
 }
 
 export async function getAllRoom(req, res) {
-  const { checkIn, checkOut, customer, roomType, search, page, limit } =
+  const { checkIn, checkOut, customer, roomType, search, page, limit, status } =
     req.query;
 
   try {
@@ -39,8 +39,10 @@ export async function getAllRoom(req, res) {
       checkIn,
       checkOut,
       customer,
+      status,
       roomType,
       search,
+
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 5
     );

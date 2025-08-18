@@ -3,6 +3,21 @@ import { prisma } from "../lib/client.js";
 export async function findUserByEmail(email) {
   return await prisma.user.findUnique({
     where: { email },
+    include: {
+      employee: {
+        include: {
+          roles: {
+            select: {
+              role: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 }
 
