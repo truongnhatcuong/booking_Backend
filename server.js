@@ -72,7 +72,10 @@ io.use((socket, next) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       socket.userId = decoded.id;
-      socket.role = decoded.role === "Lễ Tân" ? "EMPLOYEE" : decoded.role;
+      // Nếu role là Lễ Tân hoặc Quản Lý thì đều là EMPLOYEE
+      socket.role = ["Lễ Tân", "Quản Lý"].includes(decoded.role)
+        ? "EMPLOYEE"
+        : "CUSTOMER";
     } catch (err) {
       return next(new Error("Invalid token"));
     }
@@ -84,7 +87,7 @@ io.use((socket, next) => {
   next();
 });
 let onlineEmployees = new Set();
-let waitingCustomers = new Set(); // danh sách khách chưa được nhận
+let waitingCustomers = new Set();
 let assignedChats = new Map();
 // Sự kiện socket
 io.on("connection", (socket) => {
@@ -98,6 +101,11 @@ io.on("connection", (socket) => {
   const payload = { userId: socket.userId, role: socket.role };
 
   socket.emit("user_info", payload);
+
+  socket.on("release_customer", (customerId) => {
+    assignedChats.delete(customerId);
+    waitingCustomers.add(customerId); // nếu muốn khách trở lại hàng chờ
+  });
 
   if (socket.role === "EMPLOYEE") {
     onlineEmployees.add(socket.userId);

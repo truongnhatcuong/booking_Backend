@@ -80,12 +80,16 @@ export async function login({ email, password, remember }) {
     throw new NotFoundError("Mật khẩu không chính xác");
   }
 
+  let role = null;
+  if (user.userType === "EMPLOYEE" && user.employee) {
+    role = user.employee.roles[0]?.role?.name || "";
+  }
   const token = jwt.sign(
     {
       id: user.id,
       userType: user.userType,
       lastName: user.lastName,
-      role: user.employee.roles[0].role.name,
+      role,
     },
     JWT_SECRET,
     {
