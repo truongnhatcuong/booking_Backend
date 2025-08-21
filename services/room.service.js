@@ -4,6 +4,7 @@ import {
   deletedRoomRepo,
   deleteImageToRoomRepo,
   findBookedDateRangesRepo,
+  findRoomNumber,
   getAllRoomRepo,
   getRoomCustomerRepo,
   getRoomIdRepo,
@@ -78,6 +79,12 @@ export async function updateRoomService(
   id,
   { roomNumber, floor, status, notes, roomTypeId }
 ) {
+  if (roomNumber) {
+    const findRoom = await findRoomNumber(roomNumber);
+    if (findRoom && findRoom.id !== id) {
+      throw new Error("Số Phòng Đã Tồn Tại ");
+    }
+  }
   const updatedRoom = await updateRoomRepo(id, {
     roomNumber,
     floor,

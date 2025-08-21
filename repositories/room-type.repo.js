@@ -14,8 +14,13 @@ export async function findNameRoomTypeRepo(name) {
   });
 }
 
-export async function getRoomTypeRepo() {
-  return await prisma.roomType.findMany({
+export async function getRoomTypeRepo(search, skip, limit, order) {
+  const roomType = await prisma.roomType.findMany({
+    where: {
+      name: {
+        contains: search || "",
+      },
+    },
     select: {
       id: true,
       name: true,
@@ -34,7 +39,20 @@ export async function getRoomTypeRepo() {
         },
       },
     },
+    skip: Number(skip),
+    take: Number(limit),
+    orderBy: {
+      basePrice: order || "asc",
+    },
   });
+  const countRoomType = await prisma.roomType.count({
+    where: {
+      name: {
+        contains: search || "",
+      },
+    },
+  });
+  return { roomType, countRoomType };
 }
 
 export async function getRoomTypeByIdRepo(id) {

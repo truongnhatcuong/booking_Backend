@@ -134,8 +134,19 @@ export async function deletedRoomRepo(id) {
   });
 }
 
+export async function findRoomNumber(roomNumber) {
+  return await prisma.room.findUnique({
+    where: {
+      roomNumber,
+    },
+    select: {
+      id: true,
+      roomNumber: true,
+    },
+  });
+}
 export async function updateRoomRepo(id, data) {
-  return prisma.room.update({
+  return await prisma.room.update({
     where: {
       id: id,
     },

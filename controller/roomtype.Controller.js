@@ -29,8 +29,9 @@ export async function createRoomTypeController(req, res) {
 }
 
 export async function getAllRoomTypes(req, res) {
+  const { search, page, limit, order } = req.query;
   try {
-    const roomTypes = await getRoomTypeService();
+    const roomTypes = await getRoomTypeService(search, page, limit, order);
     return res.status(200).json(roomTypes);
   } catch (error) {
     return res.status(500).json({ message: error.message });

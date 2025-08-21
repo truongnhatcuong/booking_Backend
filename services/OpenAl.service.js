@@ -27,6 +27,9 @@ async function getRoom() {
         select: {
           id: true,
           basePrice: true,
+          maxOccupancy: true,
+          description: true,
+          name: true,
           amenities: {
             select: {
               amenity: {
@@ -36,9 +39,6 @@ async function getRoom() {
               },
             },
           },
-          maxOccupancy: true,
-          description: true,
-          name: true,
         },
       },
     },
@@ -84,6 +84,8 @@ export async function OpenAIService(message) {
 
   const roomInfo = await getRoom();
   const checkAvailable = await checkRoomAVAILABLE();
+  const now = new Date();
+  const dateString = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
 
   // 2. Ghép dữ liệu vào prompt
   const completion = await openai.chat.completions.create({
@@ -95,14 +97,14 @@ export async function OpenAIService(message) {
         Bạn là lễ tân khách sạn.
         - Hãy chào khách nồng nhiệt.
         - Giới thiệu website: [website](${process.env.FRONTEND_URL}) để khách tự đặt phòng.
-        - Nếu khách cần hỗ trợ gấp hoặc phản hồi, mời họ nhắn tin trực tiếp qua fanpage:[fanpage] https://web.facebook.com/tncuong2004/ (chỉ hỗ trợ, không đặt phòng giúp).
+        - Nếu khách cần hỗ trợ gấp hoặc phản hồi, mời họ nhắn tin trực tiếp qua [fanpage] (https://web.facebook.com/tncuong2004/) (chỉ hỗ trợ, không đặt phòng giúp).
         - Chỉ trả lời thông tin về khách sạn và đặt phòng dựa trên dữ liệu cung cấp.
         - Từ chối nếu câu hỏi nằm ngoài thông tin này.
         - Bạn KHÔNG hỗ trợ đặt phòng, chỉ cung cấp thông tin để tham khảo.
         - không hỗ trợ những câu hỏi không liên quan về khách sạn
         
         Dữ liệu khách sạn:
-        - Thời gian (ngày trong tuần): ${new Date().getDay()}
+        (Hôm nay: ${dateString} sau đó hiển thị danh sách phòng)
         - Danh sách phòng: ${roomInfo || "Không có dữ liệu"}
         - Thông tin phòng trống: ${checkAvailable?.count ?? 0} phòng
          -Sẽ Có Đường Link Để hỗ trợ khách hang Có thể Click Vào 

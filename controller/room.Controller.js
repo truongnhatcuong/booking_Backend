@@ -65,6 +65,7 @@ export async function deleteRoom(req, res) {
 export async function updateRoom(req, res) {
   const { id } = req.params;
   const parsed = UpdateRoomSchema.safeParse(req.body);
+
   if (!parsed.success) {
     return res.status(400).json({ message: parsed.error.issues[0].message });
   }

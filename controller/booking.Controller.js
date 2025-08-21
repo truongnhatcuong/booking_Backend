@@ -58,9 +58,17 @@ export async function CustomerBooking(req, res) {
 }
 
 export async function getAllBooking(req, res) {
-  const { idNumber } = req.query;
+  const { idNumber, status, checkInDate, checkOutDate } = req.query;
+
+  console.log(idNumber, status, checkInDate, checkOutDate);
+
   try {
-    const bookings = await getAllBookingService(idNumber);
+    const bookings = await getAllBookingService(
+      idNumber,
+      status,
+      checkInDate,
+      checkOutDate
+    );
     return res.status(200).json({ bookings, message: "Thành Công" });
   } catch (error) {
     return res.status(500).json({ message: error.message });

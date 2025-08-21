@@ -55,14 +55,30 @@ export async function BookingRepo({
   });
 }
 
-export async function getAllBookingRepo(idNumber) {
+export async function getAllBookingRepo(
+  idNumber,
+  status,
+  checkInDate,
+  checkOutDate
+) {
+  const checkIn = checkInDate ? new Date(checkInDate) : null;
+  const checkOut = checkOutDate ? new Date(checkOutDate) : null;
+  console.log(checkIn, checkOut, "là là là ");
+
   return await prisma.booking.findMany({
     where: {
       customer: {
         idNumber: {
-          contains: idNumber,
+          contains: idNumber || "",
         },
       },
+      status: status || {},
+      ...(checkIn && !isNaN(checkIn.getTime())
+        ? { checkOutDate: { gte: checkIn } }
+        : {}),
+      ...(checkOut && !isNaN(checkOut.getTime())
+        ? { checkInDate: { lte: checkOut } }
+        : {}),
     },
     select: {
       id: true,

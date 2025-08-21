@@ -34,10 +34,31 @@ export async function createRoomTypeService({
   return createRoomType;
 }
 
-export async function getRoomTypeService() {
-  const getAllRoomtype = await getRoomTypeRepo();
+export async function getRoomTypeService(
+  search = "",
+  page = 1,
+  limit = 10,
+  order = "asc"
+) {
+  const currentPage = Math.max(Number(page) || 1, 1);
+  const perPage = Math.max(Number(limit) || 10, 1);
+  const pages = (currentPage - 1) * perPage;
+  const { roomType, countRoomType } = await getRoomTypeRepo(
+    search,
+    pages,
+    limit,
+    order
+  );
 
-  return getAllRoomtype;
+  return {
+    roomType,
+    pagination: {
+      total: countRoomType,
+      page: pages,
+      limit: perPage,
+      totalPages: Math.ceil(countRoomType / limit),
+    },
+  };
 }
 
 export async function getRoomTypeByIdService(id) {

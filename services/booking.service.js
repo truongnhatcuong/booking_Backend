@@ -70,8 +70,18 @@ export async function bookingService({
   return booking;
 }
 
-export async function getAllBookingService(idNumber) {
-  const bookings = await getAllBookingRepo(idNumber);
+export async function getAllBookingService(
+  idNumber,
+  status = {},
+  checkInDate,
+  checkOutDate
+) {
+  const bookings = await getAllBookingRepo(
+    idNumber,
+    status,
+    checkInDate,
+    checkOutDate
+  );
   return bookings;
 }
 
