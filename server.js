@@ -28,8 +28,11 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
+
+console.log("là", process.env.FRONTEND_URL);
 
 app.use(cookieParser());
 // app.get("/", (req, res) => {
@@ -77,7 +80,7 @@ io.use((socket, next) => {
         ? "EMPLOYEE"
         : "CUSTOMER";
     } catch (err) {
-      return next(new Error("Invalid token"));
+      return next(new Error("Invalid token", err));
     }
   } else {
     const guestId = `guest_${Date.now()}_${Math.floor(Math.random() * 10000)}`;

@@ -86,7 +86,7 @@ export async function getAllCustomerRepo(search, skip, take) {
         {
           customer: {
             idNumber: {
-              contains: search || "",
+              equals: search || "",
             },
           },
         },
@@ -132,7 +132,7 @@ export async function countUsers(userType, search) {
   });
 }
 export async function createCustomerRepo(data) {
-  const { firstName, lastName, email, phone, idNumber } = data;
+  const { firstName, lastName, email, phone, idNumber, city, address } = data;
   return prisma.user.create({
     data: {
       firstName,
@@ -143,6 +143,15 @@ export async function createCustomerRepo(data) {
       customer: {
         create: {
           idNumber,
+          city,
+          address,
+        },
+      },
+    },
+    select: {
+      customer: {
+        select: {
+          id: true,
         },
       },
     },

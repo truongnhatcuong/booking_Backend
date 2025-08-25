@@ -68,6 +68,34 @@ export async function payMentBookingService({
   }
 }
 
+export async function payMentBookingToEmployeeService({
+  amount,
+  paymentMethod,
+  bookingId,
+  status,
+}) {
+  if (amount <= 0) {
+    throw new NotFoundError("Total amount must be greater than 0");
+  }
+
+  if (!paymentMethod) {
+    throw new NotFoundError("Payment method is required");
+  }
+
+  if (!bookingId) {
+    throw new NotFoundError("Booking ID is required");
+  }
+
+  const payment = await payMentBookingRepo({
+    amount,
+    status,
+    paymentMethod,
+    bookingId,
+  });
+
+  return payment;
+}
+
 export async function webhookpaymentService({ orderCode, status }) {
   if (!orderCode) {
     throw new NotFoundError("Order code is required");

@@ -74,13 +74,15 @@ export async function getAllBookingService(
   idNumber,
   status = {},
   checkInDate,
-  checkOutDate
+  checkOutDate,
+  totalAmount
 ) {
   const bookings = await getAllBookingRepo(
     idNumber,
     status,
     checkInDate,
-    checkOutDate
+    checkOutDate,
+    totalAmount
   );
   return bookings;
 }
@@ -95,6 +97,7 @@ export async function bookingToEmpoyeeService({
   discountCode,
   pricePerNight,
   roomId,
+  totalAmount,
 }) {
   if (checkInDate && checkOutDate) {
     const checkIn = new Date(checkInDate);
@@ -113,11 +116,8 @@ export async function bookingToEmpoyeeService({
   if (!roomId) {
     throw new NotFoundError("Room ID is required");
   }
-  const nights =
-    (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) /
-    (1000 * 60 * 60 * 24);
   let discount = null;
-  let discountAmount = 0;
+
   // nếu có mã giảm giá
   if (discountCode) {
     discount = await prisma.discount.findFirst({
@@ -130,10 +130,8 @@ export async function bookingToEmpoyeeService({
     if (!discount) {
       throw new Error("Mã giảm giá không hợp lệ hoặc đã hết hạn");
     }
-    discountAmount =
-      (pricePerNight * nights * Number(discount.percentage)) / 100;
   }
-  const totalAmount = pricePerNight * nights - discountAmount;
+
   if (totalAmount <= 0) {
     throw new NotFoundError("Tổng Tiền Phải Lớn Hơn không");
   }
@@ -149,9 +147,8 @@ export async function bookingToEmpoyeeService({
     totalGuests,
     specialRequests,
     bookingSource,
-    totalAmount: totalAmount || 0,
+    totalAmount,
     discountId: discount ? discount.id : null,
-
     pricePerNight,
     roomId,
   });

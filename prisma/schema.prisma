@@ -33,7 +33,7 @@ model Customer {
   address  String?
   city     String?
   country  String?
-  idNumber String?
+  idNumber String?   @unique
   bookings Booking[]
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   reviews  Review[]

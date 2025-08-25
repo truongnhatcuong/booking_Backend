@@ -58,16 +58,18 @@ export async function CustomerBooking(req, res) {
 }
 
 export async function getAllBooking(req, res) {
-  const { idNumber, status, checkInDate, checkOutDate } = req.query;
+  const { idNumber, status, checkInDate, checkOutDate, totalAmount } =
+    req.query;
 
-  console.log(idNumber, status, checkInDate, checkOutDate);
+  console.log("hi", idNumber, status, checkInDate, checkOutDate, totalAmount);
 
   try {
     const bookings = await getAllBookingService(
       idNumber,
       status,
       checkInDate,
-      checkOutDate
+      checkOutDate,
+      totalAmount
     );
     return res.status(200).json({ bookings, message: "Thành Công" });
   } catch (error) {
@@ -86,6 +88,7 @@ export async function bookingToEmpoyee(req, res) {
     discountCode,
     pricePerNight,
     roomId,
+    totalAmount,
   } = req.body;
   const user = req.user;
   try {
@@ -99,6 +102,7 @@ export async function bookingToEmpoyee(req, res) {
       discountCode,
       pricePerNight,
       roomId,
+      totalAmount,
     });
 
     if (!hasUserPermission(user, "BOOKING_CREATE")) {

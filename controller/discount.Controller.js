@@ -9,11 +9,6 @@ import {
 export async function discounts(req, res) {
   const { code, percentage, validFrom, validTo } = req.body;
 
-  if (!hasUserPermission(req.user, "REPORT_VIEW ")) {
-    return res
-      .status(403)
-      .json({ message: "Bạn không có quyền tạo mã giảm giá" });
-  }
   try {
     const discount = await CreateDiscountService({
       code,

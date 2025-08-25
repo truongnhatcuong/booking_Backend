@@ -45,7 +45,8 @@ export async function BookingRepo({
         },
       },
     },
-    include: {
+    select: {
+      id: true,
       customer: {
         select: {
           user: true,
@@ -59,11 +60,20 @@ export async function getAllBookingRepo(
   idNumber,
   status,
   checkInDate,
-  checkOutDate
+  checkOutDate,
+  totalAmount = "default"
 ) {
   const checkIn = checkInDate ? new Date(checkInDate) : null;
   const checkOut = checkOutDate ? new Date(checkOutDate) : null;
-  console.log(checkIn, checkOut, "là là là ");
+  let orderBy;
+  if (totalAmount === "asc") {
+    orderBy = [{ totalAmount: "asc" }, { bookingDate: "desc" }];
+  } else if (totalAmount === "desc") {
+    orderBy = [{ totalAmount: "desc" }, { bookingDate: "desc" }];
+  } else {
+    orderBy = { bookingDate: "desc" };
+  }
+  console.log(orderBy, "laf : ");
 
   return await prisma.booking.findMany({
     where: {
@@ -122,9 +132,7 @@ export async function getAllBookingRepo(
         },
       },
     },
-    orderBy: {
-      bookingDate: "desc",
-    },
+    orderBy,
   });
 }
 

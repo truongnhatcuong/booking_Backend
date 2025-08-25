@@ -149,6 +149,8 @@ export async function createCustomerService({
   email,
   phone,
   idNumber,
+  city,
+  address,
 }) {
   const customernew = await createCustomerRepo({
     firstName,
@@ -156,6 +158,8 @@ export async function createCustomerService({
     email,
     phone,
     idNumber,
+    city,
+    address,
   });
   return customernew;
 }

@@ -57,12 +57,28 @@ export const CreateCustomer = z.object({
   phone: z
     .string()
     .regex(/^(0|\+84)[0-9]{9,10}$/, "Số điện thoại không hợp lệ"),
+  city: z
+    .string()
+    .min(1, "Vui lòng nhập tên thành phố")
+    .max(50, "Tên thành phố quá dài"),
+
+  address: z
+    .string()
+    .min(1, "Vui lòng nhập địa chỉ")
+    .max(50, "Địa chỉ quá dài"),
 
   idNumber: z
     .string()
-    .min(9, "CMND/CCCD phải có ít nhất 9 số")
-    .max(12, "CMND/CCCD không được vượt quá 12 số")
-    .regex(/^\d+$/, "CMND/CCCD chỉ được chứa số"),
+    .transform((str) => str.replace(/\s|-/g, "")) // loại bỏ khoảng trắng/dấu '-'
+    .refine((val) => /^\d+$/.test(val), {
+      message: "CMND/CCCD chỉ được chứa số",
+    })
+    .refine((val) => val.length >= 9, {
+      message: "CMND/CCCD phải có ít nhất 9 số",
+    })
+    .refine((val) => val.length <= 12, {
+      message: "CCCD không được vượt quá 12 số",
+    }),
 });
 
 export const changePasswordSchema = z.object({
