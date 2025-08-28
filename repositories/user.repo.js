@@ -67,6 +67,14 @@ export async function getUserToken(userId) {
   });
 }
 
+export async function findIDNumber(idNumber) {
+  return await prisma.customer.findFirst({
+    where: {
+      idNumber,
+    },
+  });
+}
+
 export async function getAllCustomerRepo(search, skip, take) {
   return await prisma.user.findMany({
     where: {

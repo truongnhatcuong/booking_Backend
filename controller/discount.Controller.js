@@ -4,6 +4,7 @@ import {
   DeleteDisCountService,
   findDiscountByCode,
   getAllDisCodeService,
+  updateDisCoutService,
 } from "../services/discount.service.js";
 
 export async function discounts(req, res) {
@@ -17,6 +18,22 @@ export async function discounts(req, res) {
       validTo,
     });
     res.status(201).json({ discount, message: "Thêm Mã Giảm Giá Thành Công!" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function Updatediscounts(req, res) {
+  const { code, percentage, validFrom, validTo } = req.body;
+  const { id } = req.params;
+  try {
+    const discount = await updateDisCoutService(id, {
+      code,
+      percentage,
+      validFrom,
+      validTo,
+    });
+    res.status(201).json({ discount, message: "thay Mã Giảm Giá Thành Công!" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

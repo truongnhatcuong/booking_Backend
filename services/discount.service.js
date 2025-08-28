@@ -4,6 +4,7 @@ import {
   DeleteDisCountRepo,
   getAllDisCodeRepo,
   getDisCountCodeRepo,
+  updateDisCoutRepo,
 } from "../repositories/discount.repo.js";
 
 export async function CreateDiscountService(data) {
@@ -29,6 +30,17 @@ export async function CreateDiscountService(data) {
     validTo,
   });
   return result;
+}
+export async function updateDisCoutService(id, data) {
+  const { code, percentage, validFrom, validTo } = data;
+
+  const updateDiscount = await updateDisCoutRepo(id, {
+    code,
+    percentage,
+    validFrom,
+    validTo,
+  });
+  return updateDiscount;
 }
 
 export async function findDiscountByCode(code) {

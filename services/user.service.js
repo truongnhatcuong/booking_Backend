@@ -6,6 +6,7 @@ import {
   createCustomerRepo,
   createUser,
   disableUserRepo,
+  findIDNumber,
   findUserByEmail,
   getAllCustomerRepo,
   getUserToken,
@@ -30,8 +31,13 @@ export default async function signUp({
   idNumber,
 }) {
   const existingUser = await findUserByEmail(email);
+  const existIdNumber = await findIDNumber(idNumber);
+
   if (existingUser) {
     throw new Error("Email đã tồn tại");
+  }
+  if (existIdNumber) {
+    throw new Error("CCCD đã tồn tại trong hệ thống");
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
