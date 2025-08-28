@@ -32,8 +32,6 @@ app.use(
   })
 );
 
-console.log("là", process.env.FRONTEND_URL);
-
 app.use(cookieParser());
 // app.get("/", (req, res) => {
 //   res.json("server running.....").status(200);
@@ -70,7 +68,6 @@ io.use((socket, next) => {
   const cookies = cookie.parse(rawCookie); // tách cookie thành object
   const token = cookies.token; // lấy token từ key "token"
 
-  console.log("token laf,", token);
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -187,7 +184,9 @@ io.on("connection", (socket) => {
 });
 
 server.listen(port, () => {
-  console.log("Server + Socket.IO chạy tại cổng:", port);
+  console.log(
+    `Server + Socket.IO chạy ${process.env.FRONTEND_URL} tại cổng: ${port}`
+  );
 });
 
 export default app;
