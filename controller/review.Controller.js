@@ -3,6 +3,7 @@ import {
   DeleteReviewService,
   getAllReviewsService,
   getReviewsByBookingIdService,
+  PointToReviewedService,
 } from "../services/review.service.js";
 
 export async function CreateReview(req, res) {
@@ -21,6 +22,18 @@ export async function CreateReview(req, res) {
   } catch (error) {
     console.error("Error creating review:", error);
     return res.status(500).json({ error: "Internal server error" });
+  }
+}
+export async function PointToReviewed(req, res) {
+  const { bookingId } = req.query;
+  const customerId = req.user.customer.id;
+  console.log("hi", bookingId, customerId);
+
+  try {
+    const bookings = await PointToReviewedService(bookingId, customerId);
+    return res.status(200).json({ bookings, message: "Thành Công" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 }
 

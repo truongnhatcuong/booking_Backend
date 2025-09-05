@@ -267,6 +267,7 @@ export async function getBookingForUserRepo(id) {
       status: true,
       bookingSource: true,
       totalAmount: true,
+      customerId: true,
 
       bookingItems: {
         select: {

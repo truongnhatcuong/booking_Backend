@@ -17,6 +17,7 @@ const RouterBooking = Express.Router();
 RouterBooking.post("/", authCustomer, CustomerBooking);
 RouterBooking.post("/employee", authEmployee, bookingToEmpoyee);
 RouterBooking.get("/", getAllBooking);
+
 RouterBooking.get("/bookingUser", authCustomer, getBookingForUser);
 RouterBooking.put("/:id", authEmployee, confirmStatus);
 RouterBooking.put("/cancelled/:id", authEmployee, cancelledBooking);

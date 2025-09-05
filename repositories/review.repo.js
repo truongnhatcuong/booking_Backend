@@ -43,6 +43,16 @@ export async function GetReviewsByBookingIdRepo(customerId) {
   });
 }
 
+export async function PointToReviewedRepo(bookingId, customerId) {
+  const review = await prisma.review.findFirst({
+    where: { bookingId, customerId },
+  });
+  if (review) {
+    return { reviewed: true, review };
+  }
+  return { reviewed: false };
+}
+
 export async function GetReviewsAllRepo() {
   return await prisma.review.findMany({
     select: {

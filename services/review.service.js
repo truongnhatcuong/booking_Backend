@@ -4,6 +4,7 @@ import {
   DeleteReviewRepo,
   GetReviewsAllRepo,
   GetReviewsByBookingIdRepo,
+  PointToReviewedRepo,
 } from "../repositories/review.repo.js";
 
 export async function createReviewService({
@@ -42,6 +43,11 @@ export async function getReviewsByBookingIdService(customerId) {
   const reviews = await GetReviewsByBookingIdRepo(customerId);
 
   return reviews;
+}
+
+export async function PointToReviewedService(bookingId, customerId) {
+  const result = await PointToReviewedRepo(bookingId, customerId);
+  return result;
 }
 
 export async function getAllReviewsService() {

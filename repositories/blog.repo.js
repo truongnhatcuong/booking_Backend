@@ -11,6 +11,7 @@ export async function getBlogRepo() {
       slug: true,
       title: true,
       summary: true,
+      publishedAt: true,
     },
   });
   return blog;
