@@ -1,0 +1,15 @@
+export const BookingStatus = {
+  PENDING: "PENDING",
+  CONFIRMED: "CONFIRMED",
+  CHECKED_IN: "CHECKED_IN",
+  CHECKED_OUT: "CHECKED_OUT",
+  CANCELLED: "CANCELLED",
+  NO_SHOW: "NO_SHOW",
+};
+
+export const PaymentStatus = {
+  PENDING: "PENDING",
+  COMPLETED: "COMPLETED",
+  FAILED: "FAILED",
+  REFUNDED: "REFUNDED",
+};

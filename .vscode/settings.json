@@ -1,0 +1,7 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": ["javascript"], // Hoặc thêm các ngôn ngữ khác nếu cần
+  "editor.formatOnSave": false
+}
