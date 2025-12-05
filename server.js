@@ -25,6 +25,8 @@ const allowAccept = [
   "http://0.0.0.0:3000",
   "http://localhost:3000",
   "http://172.20.10.4:3000",
+  "http://103.110.87.227",
+  "http://103.110.87.227:4000",
   process.env.FRONTEND_URL,
 ];
 app.use(
