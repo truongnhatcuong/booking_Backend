@@ -57,6 +57,8 @@ export async function BookingRepo({
       },
     },
     select: {
+      checkInDate: true,
+      checkOutDate: true,
       id: true,
       customer: {
         select: {
@@ -160,8 +162,6 @@ export async function getAllBookingRepo(
       status: true,
       totalAmount: true,
       totalGuests: true,
-      createdAt: true,
-      updatedAt: true,
       bookingItems: {
         select: {
           room: {
@@ -169,7 +169,6 @@ export async function getAllBookingRepo(
               roomType: {
                 select: {
                   name: true,
-                  photoUrls: true,
                 },
               },
               roomNumber: true,
@@ -196,7 +195,6 @@ export async function getAllBookingRepo(
           id: true,
           status: true,
           paymentMethod: true,
-          transactionId: true,
           amount: true,
         },
       },

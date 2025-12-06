@@ -91,7 +91,6 @@ export async function getAllRoomRepo(
         status: true,
         notes: true,
         roomTypeId: true,
-        currentPrice: true,
         originalPrice: true,
         bookingItems: {
           select: {
@@ -105,10 +104,7 @@ export async function getAllRoomRepo(
           orderBy: { booking: { bookingDate: "desc" } },
         },
         images: {
-          select: {
-            id: true,
-            imageUrl: true,
-          },
+          take: 1,
         },
         roomType: {
           select: {
