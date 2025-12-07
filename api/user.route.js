@@ -33,6 +33,6 @@ routerUser.post("/reset-password", resetPassword);
 routerUser.post("/reset-password", resetPassword);
 routerUser.post("/refresh-token", refreshToken);
 routerUser.put("/disabled/:id", authEmployee, disableUser);
-routerUser.get("/logOut",logout);
+routerUser.get("/logOut", logout);
 
 export default routerUser;

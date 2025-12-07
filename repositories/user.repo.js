@@ -60,7 +60,14 @@ export async function getUserToken(userId) {
     where: {
       id: userId,
     },
-    include: {
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      userType: true,
+      status: true,
       customer: true, // hoặc employee nếu cần
       employee: true,
     },

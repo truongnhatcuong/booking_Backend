@@ -242,11 +242,13 @@ export async function logout(req, res) {
       httpOnly: true,
       secure: true,
       sameSite: "none",
+      path: "/",
     });
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: true,
       sameSite: "none",
+      path: "/",
     });
     return res.status(200).json({ message: "Đăng xuất thành công" });
   } catch (error) {
