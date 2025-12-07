@@ -142,18 +142,20 @@ export async function getAllBookingRepo(
 
   return await prisma.booking.findMany({
     where: {
-      customer: {
-        idNumber: {
-          contains: idNumber || "",
+      ...(idNumber && {
+        customer: {
+          idNumber: { equals: idNumber },
         },
-      },
-      status: status || {},
-      ...(checkIn && !isNaN(checkIn.getTime())
-        ? { checkOutDate: { gte: checkIn } }
-        : {}),
-      ...(checkOut && !isNaN(checkOut.getTime())
-        ? { checkInDate: { lte: checkOut } }
-        : {}),
+      }),
+      ...(status && { status }),
+
+      //ngay nhan phong
+      ...(checkIn &&
+        !isNaN(checkIn.getTime()) && { checkOutDate: { gte: checkIn } }),
+
+      //ngay tra phong
+      ...(checkOut &&
+        !isNaN(checkOut.getTime()) && { checkInDate: { lte: checkOut } }),
     },
     select: {
       id: true,

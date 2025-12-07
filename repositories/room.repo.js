@@ -39,7 +39,7 @@ export async function getAllRoomRepo(
     ...(roomType && roomType.length > 0
       ? {
           roomType: {
-            name: { in: roomType }, // LUÔN dùng in: []
+            name: { in: roomType },
 
             ...(customer && {
               maxOccupancy: { gte: Number(customer) },
@@ -56,7 +56,7 @@ export async function getAllRoomRepo(
     // SEARCH
     ...(search && {
       roomNumber: {
-        contains: search || "",
+        contains: search,
       },
     }),
 
@@ -92,17 +92,6 @@ export async function getAllRoomRepo(
         notes: true,
         roomTypeId: true,
         originalPrice: true,
-        bookingItems: {
-          select: {
-            booking: {
-              select: {
-                checkInDate: true,
-                checkOutDate: true,
-              },
-            },
-          },
-          orderBy: { booking: { bookingDate: "desc" } },
-        },
         images: {
           take: 1,
         },
@@ -115,7 +104,7 @@ export async function getAllRoomRepo(
         },
       },
     }),
-    prisma.room.count(),
+    prisma.room.count({ where }),
   ]);
 
   return {
@@ -346,8 +335,17 @@ export async function findBookedDateRangesRepo(roomId) {
 export async function findRoomForSeason(id) {
   return await prisma.room.findUnique({
     where: { id },
-    include: {
-      seasonalRates: true, // lấy tất cả season
+    select: {
+      currentPrice: true,
+      originalPrice: true,
+      seasonalRates: {
+        select: {
+          startDate: true,
+          endDate: true,
+          multiplier: true,
+          isActive: true,
+        },
+      },
     },
   });
 }

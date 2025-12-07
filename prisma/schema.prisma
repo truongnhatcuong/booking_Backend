@@ -22,8 +22,10 @@ model User {
   updatedAt DateTime   @updatedAt
   customer  Customer?
   employee  Employee?
+@@index([userType])
+@@index([firstName])
+@@index([lastName])
 
-  @@index([email, userType])
   @@map("users")
 }
 
@@ -35,34 +37,32 @@ model Customer {
   country  String?
   idNumber String?
   bookings Booking[]
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   reviews  Review[]
-
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([idNumber])
   @@map("customers")
 }
 
 model Guest {
-  id        String   @id @default(uuid())
-  fullName  String
-  idNumber  String?  
-  phone     String?
-  email     String?
+  id       String    @id @default(uuid())
+  fullName String
+  idNumber String?
+  phone    String?
+  email    String?
   booking  Booking[]
 }
 
 model RoomType {
-  id            String            @id @default(uuid())
-  name          String            @unique
-  description   String?           @db.Text
-  maxOccupancy  Int               @db.SmallInt
-  photoUrls     String
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  amenities     RoomTypeAmenity[]
-  rooms         Room[]
+  id           String            @id @default(uuid())
+  name         String            @unique
+  description  String?           @db.Text
+  maxOccupancy Int               @db.SmallInt
+  photoUrls    String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  amenities    RoomTypeAmenity[]
+  rooms        Room[]
 
-
-  @@index([name])
   @@map("room_types")
 }
 
@@ -87,7 +87,6 @@ model Amenity {
   updatedAt   DateTime          @updatedAt
   roomTypes   RoomTypeAmenity[]
 
-  @@index([name])
   @@map("amenities")
 }
 
@@ -97,17 +96,17 @@ model Room {
   floor              Int                 @db.SmallInt
   status             RoomStatus          @default(AVAILABLE)
   notes              String?             @db.Text
-  currentPrice Decimal @db.Decimal(10, 2) @default(0)
-  originalPrice  Decimal           @db.Decimal(10, 2) @default(0)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   roomTypeId         String
+  currentPrice       Decimal             @default(0.00) @db.Decimal(10, 2)
+  originalPrice      Decimal             @default(0.00) @db.Decimal(10, 2)
   bookingItems       BookingItem[]
   maintenanceRecords MaintenanceRecord[]
   images             RoomImage[]
   roomType           RoomType            @relation(fields: [roomTypeId], references: [id])
-  seasonalRates SeasonalRate[]
-  @@index([roomNumber, status])
+  seasonalRates      SeasonalRate[]
+
   @@index([roomTypeId], map: "rooms_roomTypeId_fkey")
   @@map("rooms")
 }
@@ -135,18 +134,28 @@ model Booking {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   customerId      String
-  guestId       String?      
   discountId      String?
+  guestId         String?
   bookingItems    BookingItem[]
   customer        Customer      @relation(fields: [customerId], references: [id])
-  guest            Guest?        @relation(fields: [guestId],references: [id])
   discount        Discount?     @relation(fields: [discountId], references: [id])
+  guest           Guest?        @relation(fields: [guestId], references: [id])
   payments        Payment[]
   reviews         Review[]
 
-  @@index([bookingDate, status, customerId])
-  @@index([customerId], map: "bookings_customerId_fkey")
-  @@index([discountId], map: "bookings_discountId_fkey")
+   // ⚡ TỐI ƯU CHO TRUY VẤN
+  @@index([status])
+  @@index([checkInDate])
+  @@index([checkOutDate])
+  @@index([checkInDate, checkOutDate])  // cực mạnh cho query overlap
+  @@index([bookingDate])                // sort mới dùng
+  @@index([totalAmount])                // sort asc/desc
+
+  // foreign key index
+  @@index([customerId])
+  @@index([discountId])
+  @@index([guestId])
+
   @@map("bookings")
 }
 
@@ -177,8 +186,6 @@ model Payment {
   bookingId     String
   amount        Decimal       @db.Decimal(10, 2)
   booking       Booking       @relation(fields: [bookingId], references: [id])
-
-  @@index([bookingId, status])
   @@map("payments")
 }
 
@@ -194,7 +201,7 @@ model Review {
   booking    Booking  @relation(fields: [bookingId], references: [id])
   customer   Customer @relation(fields: [customerId], references: [id])
 
-  @@index([customerId, bookingId])
+  @@index([customerId])
   @@index([bookingId], map: "reviews_bookingId_fkey")
   @@map("reviews")
 }
@@ -206,10 +213,10 @@ model SeasonalRate {
   multiplier Decimal  @db.Decimal(5, 2)
   seasonName String?
   createdAt  DateTime @default(now())
-  isActive   Boolean  @default(false)
   updatedAt  DateTime @updatedAt
-  roomId String
-  room   Room @relation(fields: [roomId], references: [id])
+  isActive   Boolean  @default(false)
+  roomId     String
+  room       Room     @relation(fields: [roomId], references: [id])
 
   @@index([roomId, startDate, endDate])
   @@map("seasonal_rates")
@@ -251,7 +258,7 @@ model BlogPost {
   slug        String    @unique
   summary     String?   @db.Text
   content     String    @db.Text
-  coverImage String? @db.Text
+  coverImage  String?   @db.Text
   published   Boolean   @default(false)
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -298,7 +305,6 @@ model Discount {
   updatedAt  DateTime  @updatedAt
   bookings   Booking[]
 
-  @@index([code, validFrom, validTo])
   @@map("discounts")
 }
 

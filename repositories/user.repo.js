@@ -132,18 +132,17 @@ export async function getAllCustomerRepo(search, skip, take) {
   });
 }
 export async function countUsers(userType, search) {
+  const keyword = search?.trim() || "";
   return prisma.user.count({
     where: {
       userType: userType || "CUSTOMER",
-      AND: [
-        {
-          OR: [
+      OR: keyword
+        ? [
             { firstName: { contains: search || "" } },
             { lastName: { contains: search || "" } },
-            { customer: { idNumber: { contains: search || "" } } },
-          ],
-        },
-      ],
+            { customer: { idNumber: { equals: search || "" } } },
+          ]
+        : undefined,
     },
   });
 }
