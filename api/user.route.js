@@ -11,6 +11,7 @@ import signUpController, {
   disableUser,
   refreshToken,
   createGuest,
+  logout,
 } from "../controller/user.controller.js";
 import { authCustomer } from "../lib/authCustomer.js";
 import { authEmployee } from "../lib/authEmployee.js";
@@ -32,4 +33,6 @@ routerUser.post("/reset-password", resetPassword);
 routerUser.post("/reset-password", resetPassword);
 routerUser.post("/refresh-token", refreshToken);
 routerUser.put("/disabled/:id", authEmployee, disableUser);
+routerUser.get("/logOut",logout);
+
 export default routerUser;
