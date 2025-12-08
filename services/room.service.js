@@ -123,12 +123,12 @@ export async function getBookedDatesService(roomId) {
   }));
 }
 
-export async function CalculatePriceRoomService(
+export async function calculatePriceRoomService(
   bookingStart,
   bookingEnd,
   roomId
 ) {
-  const room = await findRoomForSeason(roomId);
+  const room = await findRoomForSeason(bookingStart, bookingEnd, roomId);
   if (!room) throw new Error("Không tìm thấy phòng.");
 
   const start = new Date(bookingStart);
@@ -136,34 +136,30 @@ export async function CalculatePriceRoomService(
   start.setHours(0, 0, 0, 0);
   end.setHours(0, 0, 0, 0);
 
-  const activeSeason = room.seasonalRates.find((s) => s.isActive);
+  // Chuẩn hóa season trước khi dùng
+  const seasons = room.seasonalRates.map((s) => ({
+    start: new Date(s.startDate.setHours(0, 0, 0, 0)),
+    end: new Date(s.endDate.setHours(0, 0, 0, 0)),
+  }));
+
   let total = 0;
 
-  // Duyệt từng ngày trong khoảng
-  for (let d = start; d < end; d.setDate(d.getDate() + 1)) {
-    const currentDay = new Date(d);
-    currentDay.setHours(0, 0, 0, 0);
-    // Xác định nếu ngày này thuộc mùa nào
-    const season = room.seasonalRates.find((s) => {
-      const sStart = new Date(s.startDate);
-      const sEnd = new Date(s.endDate);
-      sStart.setHours(0, 0, 0, 0);
-      sEnd.setHours(0, 0, 0, 0);
-      return currentDay >= sStart && currentDay <= sEnd;
-    });
+  for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+    const day = new Date(d);
 
-    const dailyPrice = season
+    const isSeasonDay = seasons.some((s) => day >= s.start && day <= s.end);
+
+    total += isSeasonDay
       ? Number(room.currentPrice)
       : Number(room.originalPrice);
-
-    total += dailyPrice;
   }
 
+  const bookingSeason = seasons.some((s) => start >= s.start && start <= s.end);
   return {
     total,
     currentPrice: Number(room.currentPrice),
     originalPrice: Number(room.originalPrice),
-    displayPrice: activeSeason
+    displayPrice: bookingSeason
       ? Number(room.currentPrice)
       : Number(room.originalPrice),
   };

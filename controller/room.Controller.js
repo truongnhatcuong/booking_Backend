@@ -4,7 +4,7 @@ import {
 } from "../schemas/RoomtypeSchema.js";
 import {
   addRoomImageService,
-  CalculatePriceRoomService,
+  calculatePriceRoomService,
   createRoomService,
   deleteImageToRoomService,
   deleteRoomService,
@@ -157,7 +157,7 @@ export async function calculateRoomPrice(req, res) {
       return res.status(400).json({ success: false, message: "Thiếu roomId" });
     }
 
-    const result = await CalculatePriceRoomService(
+    const result = await calculatePriceRoomService(
       bookingStart,
       bookingEnd,
       roomId

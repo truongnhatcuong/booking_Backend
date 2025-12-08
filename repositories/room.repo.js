@@ -213,12 +213,11 @@ export async function getRoomCustomerRepo(
       id: true,
       roomNumber: true,
       roomTypeId: true,
-      status: true,
       currentPrice: true,
       originalPrice: true,
       images: {
+        take: 1,
         select: {
-          id: true,
           imageUrl: true,
         },
       },
@@ -332,13 +331,30 @@ export async function findBookedDateRangesRepo(roomId) {
   });
 }
 
-export async function findRoomForSeason(id) {
+export async function findRoomForSeason(bookingStart, bookingEnd, roomId) {
+  let start, end;
+
+  if (!bookingStart || !bookingEnd) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    start = today;
+    end = today;
+  } else {
+    start = new Date(bookingStart);
+    end = new Date(bookingEnd);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+  }
   return await prisma.room.findUnique({
-    where: { id },
+    where: { id: roomId },
     select: {
       currentPrice: true,
       originalPrice: true,
       seasonalRates: {
+        where: {
+          startDate: { lte: end },
+          endDate: { gte: start },
+        },
         select: {
           startDate: true,
           endDate: true,

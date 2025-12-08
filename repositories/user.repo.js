@@ -68,7 +68,7 @@ export async function getUserToken(userId) {
       phone: true,
       userType: true,
       status: true,
-      customer: true, // hoặc employee nếu cần
+      customer: true,
       employee: true,
     },
   });
