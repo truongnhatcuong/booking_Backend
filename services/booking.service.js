@@ -47,25 +47,6 @@ export async function bookingService({
     guestId
   );
 
-  if (checkInDate && checkOutDate) {
-    const checkIn = new Date(checkInDate);
-    const checkOut = new Date(checkOutDate);
-    if (checkIn >= checkOut) {
-      throw new NotFoundError("Check-out date must be after check-in date");
-    }
-  }
-  if (totalGuests <= 0) {
-    throw new NotFoundError("Total guests must be greater than 0");
-  }
-  if (totalAmount <= 0) {
-    throw new NotFoundError("Total amount must be greater than 0");
-  }
-  if (pricePerNight <= 0) {
-    throw new NotFoundError("Price per night must be greater than 0");
-  }
-  if (!roomId) {
-    throw new NotFoundError("Room ID is required");
-  }
   const room = await FindRoom(roomId);
 
   if (overlapBooking) {
@@ -94,13 +75,13 @@ export async function bookingService({
       booking.customer.user.firstName + " " + booking.customer.user.lastName,
     room: roomName,
   });
-  await sendBookingMail({
-    to,
-    name,
-    roomName,
-    checkInDate,
-    checkOutDate,
-  });
+  // await sendBookingMail({
+  //   to,
+  //   name,
+  //   roomName,
+  //   checkInDate,
+  //   checkOutDate,
+  // });
   await AuditLogCustomerBooking(booking.customer.user, booking);
 
   return booking;

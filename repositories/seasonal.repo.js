@@ -63,7 +63,8 @@ cron.schedule(
       today.setHours(0, 0, 0, 0);
       const startRates = await prisma.seasonalRate.findMany({
         where: {
-          startDate: { lt: today },
+          startDate: { lte: today },
+          isActive: false,
         },
         include: { room: true },
       });

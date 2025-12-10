@@ -384,7 +384,7 @@ Bạn là một content writer chuyên nghiệp với 10 năm kinh nghiệm vi�
 NHIỆM VỤ: Tạo một bài viết blog chất lượng cao về chủ đề: "${topic}"
 
 YÊU CẦU CỤ THỂ:
-1. Tiêu đề: Hấp dẫn, có từ khóa SEO, dài 50-60 ký tự
+1. Tiêu đề: Hấp dẫn, có từ khóa SEO, dài 40-50 ký tự
 2. Tóm tắt: 2-3 câu súc tích, gây tò mò cho người đọc
 3. Nội dung:
    - Chia thành 4-6 phần rõ ràng với tiêu đề phụ (##)
@@ -416,6 +416,5 @@ LƯU Ý:
   let parsed;
   parsed = JSON.parse(cleanText);
   console.log("🧩 AI raw response:", parsed);
-
   return parsed;
 }

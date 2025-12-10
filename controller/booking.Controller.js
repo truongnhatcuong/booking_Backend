@@ -1,4 +1,5 @@
 import { hasUserPermission } from "../lib/hasUserPermission.js";
+import { BookingSchema } from "../schemas/bookingSchema.js";
 import {
   bookingService,
   bookingToEmpoyeeService,
@@ -20,39 +21,25 @@ export async function CustomerBooking(req, res) {
       .status(403)
       .json({ message: "Tài khoản của bạn không phải khách hàng" });
   }
-  const customerId = req.user.customer.id;
+  const customerId = req?.user?.customer.id;
 
   if (!customerId) {
     return res.status(400).json({ message: "Customer ID is required" });
   }
 
-  const {
-    checkInDate,
-    checkOutDate,
-    totalGuests,
-    specialRequests,
-    bookingSource,
-    totalAmount,
-    discountId,
-    pricePerNight,
-    roomId,
-    guestId,
-  } = req.body;
+  const parsed = BookingSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.errors[0].message,
+    });
+  }
+  const bookingData = {
+    customerId,
+    ...parsed.data,
+  };
 
   try {
-    const data = await bookingService({
-      customerId,
-      checkInDate,
-      checkOutDate,
-      totalGuests,
-      specialRequests,
-      bookingSource,
-      totalAmount,
-      discountId,
-      pricePerNight,
-      roomId,
-      guestId,
-    });
+    const data = await bookingService(bookingData);
     return res.status(201).json({ message: "Đặt phòng thành công", data });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -154,10 +141,7 @@ export async function getBookingForUser(req, res) {
 
 export async function removeBookingUser(req, res) {
   const { id } = req.params;
-  const userId = req.user.id;
-  if (!userId) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+
   try {
     const data = await removeBookingUserService(id);
     return res.status(200).json({ success: true, data });
