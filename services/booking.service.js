@@ -75,13 +75,13 @@ export async function bookingService({
       booking.customer.user.firstName + " " + booking.customer.user.lastName,
     room: roomName,
   });
-  // await sendBookingMail({
-  //   to,
-  //   name,
-  //   roomName,
-  //   checkInDate,
-  //   checkOutDate,
-  // });
+  await sendBookingMail({
+    to,
+    name,
+    roomName,
+    checkInDate,
+    checkOutDate,
+  });
   await AuditLogCustomerBooking(booking.customer.user, booking);
 
   return booking;

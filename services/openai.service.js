@@ -12,8 +12,13 @@ import { GeminiLLM } from "../lib/ApiAl.js";
 import { formatPrice } from "../lib/format.js";
 import { detectIntent } from "../lib/DetectIntent.js";
 import { UpstashRedisChatMessageHistory } from "@langchain/community/stores/message/upstash_redis";
+import { ModelAi } from "../lib/ApiKeyModel.js";
 
-const llm = new GeminiLLM({
+// const llm = new GeminiLLM({
+//   apiKey: process.env.OPENAI_API_KEY,
+// });
+
+const llm1 = new ModelAi({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
@@ -237,7 +242,7 @@ Khi trả lời khách, hãy tuân theo các quy tắc sau:
 - Số Khách Tối Đa: ${r.roomType.maxOccupancy}
 - Mô tả: ${r.roomType.description || "Không có mô tả"}
 - Hình ảnh: ${imagesList}
-- [Xem chi tiết phòng](${roomUrl})`;
+- [Xem chi tiết phòng 100% phải có link phòng cho khách hàng truy cập](${roomUrl})`;
         })
         .join("\n\n");
     }
@@ -293,16 +298,16 @@ ${message}`;
       ["user", "{input}"],
     ]);
 
-    const chain = RunnableSequence.from([prompt, llm]);
+    const chain = RunnableSequence.from([prompt, llm1]);
     const response = await chain.invoke({
       input: userMessage,
     });
 
     // 7️⃣ LƯU VÀO CONVERSATION HISTORY
-    const reply =
-      response?.content.parts[0].text ?? "Xin lỗi, tôi chưa thể trả lời.";
+    // const reply =
+    //   response?.content.parts[0].text ?? "Xin lỗi, tôi chưa thể trả lời.";
 
-    // const reply = response?.content ?? "Xin lỗi, tôi chưa thể trả lời.";
+    const reply = response ?? "Xin lỗi, tôi chưa thể trả lời.";
 
     await messageHistory.addUserMessage(message);
     await messageHistory.addAIMessage(reply);
@@ -315,6 +320,71 @@ ${message}`;
   }
 }
 
+export async function OPenAITestService(userMessage) {
+  try {
+    const systemPrompt = `
+=== HƯỚNG DẪN TRẢ LỜI ===
+Bạn là lễ tân khách sạn chuyên nghiệp. Khi trả lời khách, hãy tuân theo các quy tắc sau:
+
+1. **Cấu trúc câu trả lời**:
+   - Chào hỏi thân thiện (nếu là tin nhắn đầu)
+   - Trả lời chính xác câu hỏi
+   - Bổ sung thông tin liên quan (nếu hữu ích)
+   - Hỏi lại nếu cần thêm thông tin
+
+2. **Khi giới thiệu phòng**:
+   - hãy giới thiệu những loại phòng có sẵn
+   - Tên Phòng
+   - Diện tích
+   - Số người tối đa
+   - Tiện nghi nổi bật
+   - Hình ảnh Phòng
+   - Gợi ý xem thêm tại website
+
+3. **Khi giới thiệu địa điểm**:
+   - Tên địa điểm
+   - Khoảng cách từ khách sạn
+   - Đánh giá (nếu có)
+   - Link Google Maps (hiển thị đường link cho khách hàng click vào)
+
+4. **Emoji phù hợp**: 🏨 🛏️ 🌊 ☀️ 🌧️ ⭐ 📍 🚗 🍽️  
+
+5. **Tone**: Thân thiện, chuyên nghiệp, nhiệt tình nhưng không lan man.
+   - Nếu câu hỏi không liên quan, trả lời ngắn gọn và hướng khách quay lại chủ đề khách sạn.
+   - Chỉ trả lời về khách sạn, phòng và địa điểm xung quanh.
+   - Không tự bịa thông tin ngoài dữ liệu.
+   - Khi khách hỏi tiếp chi tiết, trả lời cụ thể dựa trên dữ liệu có sẵn.
+
+(Hãy giới thiệu về thông tin khách sạn đầu tiên nhé)
+
+=== THÔNG TIN KHÁCH SẠN ===
+- Tên: ${hotelInfo.name}
+- Địa chỉ: ${hotelInfo.address}
+- Hotline: ${hotelInfo.phone}
+- Website: ${process.env.FRONTEND_URL}
+- Check-in: ${hotelInfo.checkInTime} | Check-out: ${hotelInfo.checkOutTime}
+- Tiện ích: ${hotelInfo.amenities.join(", ")}
+- Chính sách hủy: ${hotelInfo.policies.cancellation}
+- Đặt cọc: ${hotelInfo.policies.deposit}
+    `;
+
+    const prompt = ChatPromptTemplate.fromMessages([
+      ["system", systemPrompt],
+      ["user", "{input}"],
+    ]);
+
+    const chain = RunnableSequence.from([prompt, llm1]);
+
+    const response = await chain.invoke({
+      input: userMessage,
+    });
+
+    return response;
+  } catch (error) {
+    console.error("OPenAITestService error:", error);
+    throw error;
+  }
+}
 //get chatbot
 export async function GetChatHistoryService(sessionId) {
   if (!sessionId) {
@@ -406,9 +476,9 @@ LƯU Ý:
 - Chỉ trả về JSON hợp lệ, không markdown, không text ngoài
 - Viết bằng Tiếng Việt tự nhiên, cuốn hút
 `;
-  const result = await llm._call(prompt);
+  const result = await llm1._call(prompt);
   // ✅ Trích text ra từ object trả về
-  const text = result?.content?.parts?.[0]?.text ?? "Không có phản hồi.";
+  const text = result ?? "Không có phản hồi.";
   const cleanText = text
     .replace(/^```json\s*/i, "") // bỏ mở đầu ```json
     .replace(/```$/i, "") // bỏ ``` cuối

@@ -2,6 +2,7 @@ import {
   generatePostService,
   GetChatHistoryService,
   OpenAIService,
+  OPenAITestService,
 } from "../services/openai.service.js";
 
 export async function chatController(req, res) {
@@ -28,6 +29,26 @@ export async function chatController(req, res) {
     });
   }
 }
+
+export async function chatTestController(req, res) {
+  try {
+    const { message } = req.body;
+
+    const result = await OPenAITestService(message);
+
+    return res.status(200).json({
+      success: true,
+      result,
+    });
+  } catch (error) {
+    console.error("Error in chatController:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Đã có lỗi xảy ra, vui lòng thử lại",
+    });
+  }
+}
+
 export async function generatePost(req, res) {
   const { topic } = req.body;
 
