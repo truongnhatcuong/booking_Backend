@@ -8,17 +8,11 @@ import {
 
 const dashboardRouter = Express.Router();
 
-dashboardRouter.get("/dashboard", getStatisticalController);
+dashboardRouter.get("/", getStatisticalController);
+dashboardRouter.get("/revenue-total-month", getRevenueTotalMonthController);
+dashboardRouter.get("/customer-count-by-month", CustomerCountByMonthController);
 dashboardRouter.get(
-  "/dashboard/revenue-total-month",
-  getRevenueTotalMonthController
-);
-dashboardRouter.get(
-  "/dashboard/customer-count-by-month",
-  CustomerCountByMonthController
-);
-dashboardRouter.get(
-  "/dashboard/revenue-online-offline",
+  "/revenue-online-offline",
   getRevenueOnlineOfflineController
 );
 

@@ -32,6 +32,7 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^1.0.3",
+    "luxon": "^3.7.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.3",
     "openai": "^4.67.3",

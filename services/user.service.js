@@ -9,12 +9,13 @@ import {
   findIDNumber,
   findUserByEmail,
   getAllCustomerRepo,
-  getUserToken,
+  findIdUser,
   updateUserId,
   updateUserPassword,
   updateUserToken,
   createGuestRepo,
   findIDNumberGuest,
+  getUserToken,
 } from "../repositories/user.repo.js";
 import NotFoundError from "../errors/not-found.error.js";
 import { sendResetMail } from "../lib/mailer.js";
@@ -199,7 +200,7 @@ export async function changePasswordService(
   currentPassword,
   newPassword
 ) {
-  const user = await getUserToken(userId);
+  const user = await findIdUser(userId);
   if (!user) throw new Error("Người dùng không tồn tại");
   const isMatch = await bcrypt.compare(currentPassword, user.password);
   if (!isMatch) throw new NotFoundError("Mật Khẩu Không Chính Xác !");
@@ -227,7 +228,7 @@ export const resetPasswordService = async (token, password) => {
 };
 
 export async function disableUserService(userId) {
-  const user = await getUserToken(userId);
+  const user = await findIdUser(userId);
   if (!user) throw new NotFoundError("Người dùng không tồn tại");
 
   const updatedUser = await disableUserRepo(userId);

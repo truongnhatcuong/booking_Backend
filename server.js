@@ -54,7 +54,7 @@ app.use("/api/discount", disCoutRouter);
 app.use("/api/review", routerReview);
 app.use("/api/maintenance", routerMaintenance);
 app.use("/api/role", routerRoleEmployee);
-app.use("/api", dashboardRouter);
+app.use("/api/dashboard", dashboardRouter);
 app.use("/api/blog", blogRoute);
 app.use("/api/chatai", routerOpenAi);
 app.use("/api/seasonal", routerSeasonal);

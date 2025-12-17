@@ -74,6 +74,17 @@ export async function getUserToken(userId) {
   });
 }
 
+export async function findIdUser(id) {
+  return await prisma.user.findFirst({
+    where: {
+      id,
+    },
+    select: {
+      password: true,
+    },
+  });
+}
+
 export async function findIDNumber(idNumber) {
   return await prisma.customer.findFirst({
     where: {

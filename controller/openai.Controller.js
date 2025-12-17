@@ -1,4 +1,5 @@
 import {
+  generateMiniStatsService,
   generatePostService,
   GetChatHistoryService,
   OpenAIService,
@@ -68,5 +69,33 @@ export async function generatePost(req, res) {
     res
       .status(500)
       .json({ success: false, message: "Lỗi server", error: error.message });
+  }
+}
+
+// thong ke
+
+export async function generateMiniStats(req, res) {
+  const { message } = req.body;
+
+  try {
+    if (!message) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Thiếu nội dung (message)" });
+    }
+
+    const text = await generateMiniStatsService(message);
+
+    return res.json({
+      success: true,
+      data: { text }, // chatbot lấy data.text để hiển thị
+    });
+  } catch (error) {
+    console.error("❌ Lỗi generateMiniStats:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+      error: error.message,
+    });
   }
 }

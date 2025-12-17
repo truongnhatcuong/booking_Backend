@@ -6,17 +6,22 @@ import {
   checkRoomAVAILABLE,
   getRoom,
   getRoomType,
+  MiniStatsRepo,
 } from "../repositories/openai.repo.js";
 import WeatherHeader from "../lib/Weather.js";
-import { GeminiLLM } from "../lib/ApiAl.js";
 import { formatPrice } from "../lib/format.js";
 import { detectIntent } from "../lib/DetectIntent.js";
 import { UpstashRedisChatMessageHistory } from "@langchain/community/stores/message/upstash_redis";
 import { ModelAi } from "../lib/ApiKeyModel.js";
-
-// const llm = new GeminiLLM({
-//   apiKey: process.env.OPENAI_API_KEY,
-// });
+import { getDateRange } from "../lib/dateRange.js";
+import {
+  extractEmail,
+  extractLimitFromMessage,
+  formatNaturalText,
+  formatRoomTablePayload,
+  labelByAction,
+  safeJsonParse,
+} from "../lib/suportAi.js";
 
 const llm1 = new ModelAi({
   apiKey: process.env.OPENAI_API_KEY,
@@ -487,4 +492,289 @@ LƯU Ý:
   parsed = JSON.parse(cleanText);
   console.log("🧩 AI raw response:", parsed);
   return parsed;
+}
+
+// thong ke
+
+const buildPrompt = (message) => `
+Bạn là bộ phân loại câu hỏi cho hệ thống khách sạn.
+CHỈ trả về JSON hợp lệ.
+
+Output schema:
+- Nếu hỏi thống kê chung theo thời gian:
+  {"type":"MINI_STATS","action":"TODAY|THIS_WEEK|THIS_MONTH|THIS_YEAR","limit":5}
+- Nếu hỏi theo phòng:
+  {"type":"ROOM","roomNumber":"401","action":"TODAY|THIS_WEEK|THIS_MONTH|THIS_YEAR","intent":"ROOM_OVERVIEW|ROOM_GUEST|ROOM_REVENUE|ROOM_PAYMENT_METHOD","revenueMode":"stay|payment"}
+- Nếu hỏi thông tin khách theo email/sđt/tên:
+  {"type":"CUSTOMER","query":"<email hoặc sđt hoặc tên>"}
+- Nếu không hiểu:
+  {"type":"UNKNOWN"}
+
+User: """${message}"""
+`;
+
+const ACTION_TO_RANGE = {
+  TODAY: "day",
+  THIS_WEEK: "week",
+  THIS_MONTH: "month",
+  THIS_YEAR: "year",
+};
+
+// ✅ Service đúng form generatePostService: trả TEXT
+// ===== Helpers =====
+function extractRoomNumber(message) {
+  const text = String(message || "");
+  const m = text.match(/(?:phòng|phong|room)\s*#?\s*(\d{1,4})/i);
+  return m ? m[1] : null;
+}
+
+function detectRoomIntent(mLower) {
+  const wantsGuest =
+    /(ai đang ở|khách.*đang ở|đang ở|đang lưu trú|đang check-?in|ở phòng)/i.test(
+      mLower
+    );
+
+  const wantsPaymentMethod =
+    /(phương thức|payment\s*method|thanh toán bằng|trả bằng|hình thức thanh toán)/i.test(
+      mLower
+    );
+
+  const wantsRevenue = /(doanh thu|revenue|tiền)/i.test(mLower);
+
+  // nếu user hỏi "tổng quan phòng 401" => overview
+  const wantsOverview = /(tổng quan|overview|chi tiết|thống kê phòng)/i.test(
+    mLower
+  );
+
+  // ưu tiên cụ thể, nếu không rõ mà có "phòng xxx" thì coi như overview
+  return {
+    wantsGuest,
+    wantsPaymentMethod,
+    wantsRevenue,
+    wantsOverview:
+      wantsOverview || (!wantsGuest && !wantsPaymentMethod && !wantsRevenue),
+  };
+}
+
+// phân biệt "doanh thu phòng" (stay) vs "tiền đã thu" (payment)
+function detectRevenueMode(mLower) {
+  const byPayment = /(đã thu|thu tiền|payment|thanh toán|trả tiền)/i.test(
+    mLower
+  );
+  return byPayment ? "payment" : "stay";
+}
+
+// ===== Service =====
+export async function generateMiniStatsService(message) {
+  if (!message) throw new Error("Thiếu nội dung (message)");
+  if (!llm1?._call) throw new Error("Thiếu llm1 hoặc llm1._call");
+
+  // 1) Prompt + gọi LLM
+  const prompt = buildPrompt(message);
+  const result = await llm1._call(prompt);
+
+  // 2) Parse JSON action/intents
+  const rawText = result ?? "";
+  const parsed = safeJsonParse(rawText);
+
+  // 3) Detect room query (ưu tiên bắt bằng regex trước)
+  const mLower = String(message || "").toLowerCase();
+  const roomNumber = parsed?.roomNumber || extractRoomNumber(message);
+
+  // ✅ nếu user đưa email → tra cứu khách luôn
+  const email = extractEmail(message);
+  if (email) {
+    const rs = await MiniStatsRepo.searchPeople(email, 10);
+    const customers = rs?.customers || [];
+
+    if (!customers.length) {
+      return {
+        kind: "MINI_STATS_TABLE",
+        period: {
+          label: "Tra cứu khách",
+          from: new Date().toISOString(),
+          to: new Date().toISOString(),
+        },
+        tables: [
+          {
+            title: "Kết quả tra cứu",
+            columns: [
+              { key: "field", label: "Trường" },
+              { key: "value", label: "Giá trị" },
+            ],
+            rows: [
+              { field: "Email", value: email },
+              { field: "Kết quả", value: "Không tìm thấy khách" },
+            ],
+          },
+        ],
+      };
+    }
+
+    const flatCustomers = Array.isArray(customers) ? customers.flat() : [];
+
+    return {
+      kind: "MINI_STATS_TABLE",
+      period: { label: "Tra cứu khách", from: null, to: null },
+      tables: [
+        {
+          title: `Kết quả tra cứu (${flatCustomers.length})`,
+          columns: [
+            { key: "rank", label: "#" },
+            { key: "name", label: "Tên" },
+            { key: "email", label: "Email" },
+            { key: "phone", label: "SĐT" },
+            { key: "idNumber", label: "CCCD" },
+          ],
+          rows: flatCustomers.map((c, idx) => {
+            const u = c.user || {};
+            const name =
+              `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Không rõ";
+
+            return {
+              rank: idx + 1,
+              name,
+              email: u.email ?? "—",
+              phone: u.phone ?? "—",
+              idNumber: c.idNumber ?? "—",
+            };
+          }),
+        },
+      ],
+    };
+  }
+
+  // 4) Xác định action range (TODAY/THIS_WEEK/THIS_MONTH/THIS_YEAR)
+  const actionFromLLM = parsed?.action;
+  const action =
+    actionFromLLM && actionFromLLM !== "UNKNOWN"
+      ? actionFromLLM
+      : /(hôm nay|hom nay|tổng quan hôm nay|tong quan hôm nay)/i.test(mLower)
+        ? "TODAY"
+        : /(tuần này|tuan nay|trong tuần)/i.test(mLower)
+          ? "THIS_WEEK"
+          : /(tháng này|thang nay|trong tháng)/i.test(mLower)
+            ? "THIS_MONTH"
+            : /(năm nay|nam nay|trong năm)/i.test(mLower)
+              ? "THIS_YEAR"
+              : "TODAY"; // default
+
+  const rangeKey = ACTION_TO_RANGE[action];
+  if (!rangeKey) return "Không hiểu yêu cầu thống kê mini.";
+
+  const { from, to } = getDateRange(rangeKey);
+
+  // ==========================
+  // A) Nếu hỏi theo PHÒNG
+  // ==========================
+  if (roomNumber) {
+    const intentFromLLM = parsed?.intent; // optional
+    const intents = detectRoomIntent(mLower);
+
+    // nếu LLM có intent thì override nhẹ
+    const wantsOverview = intentFromLLM
+      ? intentFromLLM === "ROOM_OVERVIEW"
+      : intents.wantsOverview;
+
+    const wantsGuest = intentFromLLM
+      ? intentFromLLM === "ROOM_GUEST"
+      : intents.wantsGuest;
+
+    const wantsRevenue = intentFromLLM
+      ? intentFromLLM === "ROOM_REVENUE"
+      : intents.wantsRevenue;
+
+    const wantsPaymentMethod = intentFromLLM
+      ? intentFromLLM === "ROOM_PAYMENT_METHOD"
+      : intents.wantsPaymentMethod;
+
+    const revenueMode = parsed?.revenueMode || detectRevenueMode(mLower);
+
+    const tasks = [];
+
+    // current guest
+    if (wantsOverview || wantsGuest) {
+      tasks.push(
+        MiniStatsRepo.getCurrentGuestInRoom(
+          String(roomNumber),
+          new Date()
+          // ✅ thêm piiMode
+        ).then((x) => ({
+          key: "current",
+          value: x,
+        }))
+      );
+    }
+
+    // revenue
+    if (wantsOverview || wantsRevenue) {
+      const revFn =
+        revenueMode === "payment"
+          ? MiniStatsRepo.roomRevenueByPaymentsInRange
+          : MiniStatsRepo.roomStayRevenueInRange;
+
+      tasks.push(
+        revFn(String(roomNumber), from, to).then((total) => ({
+          key: "revenue",
+          value: { mode: revenueMode, total },
+        }))
+      );
+    }
+
+    // payment method breakdown
+    if (wantsOverview || wantsPaymentMethod) {
+      tasks.push(
+        MiniStatsRepo.roomRevenueByMethodInRange(
+          String(roomNumber),
+          from,
+          to
+        ).then((x) => ({
+          key: "paymentMethods",
+          value: x,
+        }))
+      );
+    }
+
+    const results = await Promise.all(tasks);
+
+    const payload = results.reduce(
+      (acc, it) => {
+        acc[it.key] = it.value;
+        return acc;
+      },
+      {
+        from, // ✅ thêm from/to để formatter dùng period
+        to,
+      }
+    );
+
+    // ✅ dùng formatter riêng cho phòng
+    return formatRoomTablePayload(String(roomNumber), action, payload);
+  }
+
+  // ==========================
+  // B) Mini stats CHUNG (như bạn đang làm)
+  // ==========================
+  const limit = extractLimitFromMessage(message);
+
+  const [roomsBooked, newCustomers, revenue, topCustomer, paymentMethod] =
+    await Promise.all([
+      MiniStatsRepo.countRoomsBookedInRange(from, to), // hoặc countRoomsBookedInRange
+      MiniStatsRepo.countNewCustomersInRange(from, to), // hoặc countNewCustomersInRange
+      MiniStatsRepo.sumRevenueInRange(from, to),
+      MiniStatsRepo.topCustomersByRange(from, to, limit),
+      MiniStatsRepo.revenueByMethodInRange(from, to),
+    ]);
+
+  const data = {
+    from,
+    to,
+    roomsBooked,
+    newCustomers,
+    topCustomer,
+    revenue,
+    paymentMethod,
+  };
+
+  return formatNaturalText(data, action);
 }
