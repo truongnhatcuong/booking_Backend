@@ -27,6 +27,7 @@ const allowAccept = [
   "http://172.20.10.4:3000",
   "http://103.110.87.227",
   "http://103.110.87.227:4000",
+  "https://cuongprofile.me/",
   process.env.FRONTEND_URL,
 ];
 app.use(
