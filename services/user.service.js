@@ -10,7 +10,7 @@ import {
   findUserByEmail,
   getAllCustomerRepo,
   findIdUser,
-  updateUserId,
+  updateUserRepo,
   updateUserPassword,
   updateUserToken,
   createGuestRepo,
@@ -131,19 +131,8 @@ export async function refreshTokenService(refreshToken) {
   return newAccessToken;
 }
 
-export async function updateUser(
-  userId,
-  { firstName, lastName, phone, address, city, country, idNumber }
-) {
-  const updatedUser = await updateUserId(userId, {
-    firstName,
-    lastName,
-    phone,
-    address,
-    city,
-    country,
-    idNumber,
-  });
+export async function updateUserService(userId, userData) {
+  const updatedUser = await updateUserRepo(userId, userData);
 
   return { updatedUser };
 }

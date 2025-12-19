@@ -1,7 +1,7 @@
 import express from "express";
 import signUpController, {
   loginController,
-  updateUserController,
+  updateUser,
   getUserController,
   getAllCustomer,
   createCustomer,
@@ -23,7 +23,7 @@ routerUser.post("/signUp", signUpController);
 routerUser.post("/login", loginController);
 routerUser.post("/createCustomer", authEmployee, createCustomer);
 routerUser.post("/guest", authCustomer, createGuest);
-routerUser.put("/user/:id", updateUserController);
+routerUser.put("/customer/:id", updateUser);
 routerUser.post("/user/changePassword", authCustomer, changePassword);
 routerUser.get("/customer", getAllCustomer);
 routerUser.get("/user", authCustomer, getUserController);

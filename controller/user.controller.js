@@ -17,7 +17,7 @@ import signUp, {
   login,
   refreshTokenService,
   resetPasswordService,
-  updateUser,
+  updateUserService,
 } from "../services/user.service.js";
 
 // đăng kí
@@ -79,7 +79,7 @@ export async function loginController(req, res) {
 }
 
 //cập nhật thông tin
-export async function updateUserController(req, res) {
+export async function updateUser(req, res) {
   const userId = req.params.id;
 
   try {
@@ -87,7 +87,7 @@ export async function updateUserController(req, res) {
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.issues[0].message });
     }
-    const { updatedUser } = await updateUser(userId, parsed.data);
+    const { updatedUser } = await updateUserService(userId, parsed.data);
 
     return res.status(200).json({
       message: `Cập nhật thành công người dùng id: ${updatedUser.id}`,

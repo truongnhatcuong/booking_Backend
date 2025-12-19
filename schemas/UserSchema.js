@@ -33,11 +33,6 @@ export const UserUpdateSchema = z.object({
   address: z.string().min(1, { message: "Vui lòng nhập địa chỉ" }),
   city: z.string().min(1, { message: "Vui lòng nhập thành phố" }),
   country: z.string().min(1, { message: "Vui lòng nhập quốc gia" }),
-  idNumber: z
-    .string()
-    .min(9, "CMND/CCCD phải có ít nhất 9 số")
-    .max(12, "CMND/CCCD không được vượt quá 12 số")
-    .regex(/^\d+$/, "CMND/CCCD chỉ được chứa số"),
 });
 const phoneRegex = /^(?:\+84|0)\d{9,10}$/;
 

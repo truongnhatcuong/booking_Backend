@@ -32,7 +32,7 @@ const allowAccept = [
 ];
 app.use(
   cors({
-    origin: allowAccept || "http://localhost:3000",
+    origin: allowAccept || process.env.FRONTEND_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
   })

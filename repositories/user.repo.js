@@ -34,7 +34,7 @@ export async function updateUserToken(userId, token) {
   });
 }
 
-export async function updateUserId(userId, userData) {
+export async function updateUserRepo(userId, userData) {
   return await prisma.user.update({
     where: {
       id: userId,
@@ -48,7 +48,6 @@ export async function updateUserId(userId, userData) {
           address: userData.address,
           city: userData.city,
           country: userData.country,
-          idNumber: userData.idNumber,
         },
       },
     },
@@ -68,6 +67,7 @@ export async function getUserToken(userId) {
       phone: true,
       userType: true,
       status: true,
+      createdAt: true,
       customer: true,
       employee: true,
     },
