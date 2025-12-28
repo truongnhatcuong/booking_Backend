@@ -17,9 +17,12 @@ import dashboardRouter from "./api/statistical.route.js";
 import blogRoute from "./api/blog.route.js";
 import routerOpenAi from "./api/openAl.route.js";
 import routerSeasonal from "./api/seasonal.route.js";
-
+import session from "express-session";
+import passport from "passport";
+import GoogleRouter from "./api/google.routes.js";
+import "./lib/passport.js";
 const app = express();
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 5000;
 app.use(express.json());
 const allowAccept = [
   "http://0.0.0.0:3000",
@@ -39,13 +42,25 @@ app.use(
 );
 
 app.use(cookieParser());
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "dev_secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true },
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 // app.get("/", (req, res) => {
 //   res.json("server running.....").status(200);
 // });
 app.get("/", async (req, res) => {
   res.status(200).json({ message: "server running....." });
 });
-app.use("/api/auth", routerUser, employeeRouter);
+app.use("/api/auth", routerUser, employeeRouter, GoogleRouter);
 app.use("/api/amenity", amenityRouter);
 app.use("/api/roomtype", routerRoomtype);
 app.use("/api/room", routerRoom);

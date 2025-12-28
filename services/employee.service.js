@@ -9,7 +9,7 @@ import {
   updateTokenToDb,
 } from "../repositories/employee.repo.js";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import NotFoundError from "../errors/not-found.error.js";
 import { countUsers } from "../repositories/user.repo.js";
 
