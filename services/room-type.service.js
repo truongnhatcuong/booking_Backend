@@ -1,5 +1,6 @@
 import NotFoundError from "../errors/not-found.error.js";
 import { prisma } from "../lib/client.js";
+import redisClient from "../repositories/redisClient.js";
 import {
   addAmenityRepo,
   createRoomTypeRepo,
@@ -38,7 +39,7 @@ export async function getRoomTypeService(search = "", page = 1, limit = 10) {
   const { roomType, countRoomType } = await getRoomTypeRepo(
     search,
     pages,
-    limit
+    limit,
   );
 
   return {
@@ -62,8 +63,9 @@ export async function getRoomTypeByIdService(id) {
 
 export async function updateRoomTypeService(
   id,
-  { name, description, maxOccupancy, photoUrls }
+  { name, description, maxOccupancy, photoUrls },
 ) {
+  const cacheKey = `roomType:${id}`;
   const getRoomTypeById = await getRoomTypeByIdRepo(id);
   if (!getRoomTypeById) {
     throw new NotFoundError("Id Không tồn tại");
@@ -74,7 +76,11 @@ export async function updateRoomTypeService(
     maxOccupancy,
     photoUrls,
   });
-
+  try {
+    await redisClient.del(cacheKey);
+  } catch (error) {
+    console.error("❌ Lỗi xóa cache:", error);
+  }
   return { updateRoomtype, getRoomTypeById };
 }
 
@@ -84,6 +90,13 @@ export async function DeleteRoomTypeService(id) {
     return null;
   }
   const deleted = await deleteRoomTypeRepo(id);
+  const cacheKey = `roomType:${id}`;
+  try {
+    await redisClient.del(cacheKey);
+    console.log(`✅ Đã xóa cache cho key: ${cacheKey}`);
+  } catch (err) {
+    console.error("❌ Lỗi xóa cache:", err);
+  }
   return { deleted, getRoomTypeById };
 }
 

@@ -1,7 +1,7 @@
 import NotFoundError from "../errors/not-found.error.js";
 import { prisma } from "../lib/client.js";
 
-export async function getBlogRepo() {
+export async function getBlogRepo({ skip, limit = 10 }) {
   const blog = await prisma.blogPost.findMany({
     where: {
       published: true,
@@ -14,10 +14,21 @@ export async function getBlogRepo() {
       summary: true,
       publishedAt: true,
     },
+    skip: skip,
+    take: limit,
   });
+
   return blog;
 }
 
+export async function totalBlogRepo() {
+  const total = await prisma.blogPost.count({
+    where: {
+      published: true,
+    },
+  });
+  return total;
+}
 export async function getBlogToSlugRepo(slug) {
   const blog = await prisma.blogPost.findUnique({
     where: {

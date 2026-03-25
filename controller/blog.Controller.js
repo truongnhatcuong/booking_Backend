@@ -11,7 +11,9 @@ import {
 
 export async function getBlog(req, res) {
   try {
-    const getBlog = await getBlogService(req.body);
+    const { page, limit } = req.query;
+
+    const getBlog = await getBlogService({ page, limit });
     return res.status(200).json(getBlog);
   } catch (error) {
     return res.status(400).json(error);

@@ -19,7 +19,6 @@ import {
   extractLimitFromMessage,
   formatNaturalText,
   formatRoomTablePayload,
-  labelByAction,
   safeJsonParse,
 } from "../lib/suportAi.js";
 
@@ -266,7 +265,7 @@ Khi trả lời khách, hãy tuân theo các quy tắc sau:
    - Địa chỉ: ${p.dia_chi ? `[Xem trên Google Maps](https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.dia_chi)})` : "Không có"}
    - Đánh giá: ${p.danh_gia ?? "chưa có đánh giá"} ⭐
    - Số đánh giá: ${p.so_danh_gia ? p.so_danh_gia + " lượt" : "Không có"}
-   - Hình ảnh: ${p.hinh_anh || "Không có"}`
+   - Hình ảnh: ${p.hinh_anh || "Không có"}`,
         )
         .join("\n\n");
     }
@@ -531,19 +530,19 @@ function extractRoomNumber(message) {
 function detectRoomIntent(mLower) {
   const wantsGuest =
     /(ai đang ở|khách.*đang ở|đang ở|đang lưu trú|đang check-?in|ở phòng)/i.test(
-      mLower
+      mLower,
     );
 
   const wantsPaymentMethod =
     /(phương thức|payment\s*method|thanh toán bằng|trả bằng|hình thức thanh toán)/i.test(
-      mLower
+      mLower,
     );
 
   const wantsRevenue = /(doanh thu|revenue|tiền)/i.test(mLower);
 
   // nếu user hỏi "tổng quan phòng 401" => overview
   const wantsOverview = /(tổng quan|overview|chi tiết|thống kê phòng)/i.test(
-    mLower
+    mLower,
   );
 
   // ưu tiên cụ thể, nếu không rõ mà có "phòng xxx" thì coi như overview
@@ -559,7 +558,7 @@ function detectRoomIntent(mLower) {
 // phân biệt "doanh thu phòng" (stay) vs "tiền đã thu" (payment)
 function detectRevenueMode(mLower) {
   const byPayment = /(đã thu|thu tiền|payment|thanh toán|trả tiền)/i.test(
-    mLower
+    mLower,
   );
   return byPayment ? "payment" : "stay";
 }
@@ -697,12 +696,12 @@ export async function generateMiniStatsService(message) {
       tasks.push(
         MiniStatsRepo.getCurrentGuestInRoom(
           String(roomNumber),
-          new Date()
+          new Date(),
           // ✅ thêm piiMode
         ).then((x) => ({
           key: "current",
           value: x,
-        }))
+        })),
       );
     }
 
@@ -717,7 +716,7 @@ export async function generateMiniStatsService(message) {
         revFn(String(roomNumber), from, to).then((total) => ({
           key: "revenue",
           value: { mode: revenueMode, total },
-        }))
+        })),
       );
     }
 
@@ -727,11 +726,11 @@ export async function generateMiniStatsService(message) {
         MiniStatsRepo.roomRevenueByMethodInRange(
           String(roomNumber),
           from,
-          to
+          to,
         ).then((x) => ({
           key: "paymentMethods",
           value: x,
-        }))
+        })),
       );
     }
 
@@ -745,7 +744,7 @@ export async function generateMiniStatsService(message) {
       {
         from, // ✅ thêm from/to để formatter dùng period
         to,
-      }
+      },
     );
 
     // ✅ dùng formatter riêng cho phòng

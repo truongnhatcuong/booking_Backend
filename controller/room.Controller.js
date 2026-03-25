@@ -2,6 +2,7 @@ import {
   createRoomSchema,
   UpdateRoomSchema,
 } from "../schemas/RoomtypeSchema.js";
+
 import {
   addRoomImageService,
   calculatePriceRoomService,
@@ -15,6 +16,7 @@ import {
   getRoomsByRoomTypeIdService,
   updateRoomService,
 } from "../services/room.service.js";
+
 
 export async function createRoom(req, res) {
   const parsed = createRoomSchema.safeParse(req.body);
@@ -44,7 +46,7 @@ export async function getAllRoom(req, res) {
       roomType,
       search,
       page ? parseInt(page) : 1,
-      limit ? parseInt(limit) : 5
+      limit ? parseInt(limit) : 5,
     );
     return res.status(200).json({ room, message: "Thành Công" });
   } catch (error) {
@@ -108,7 +110,7 @@ export async function getRoomCustomer(req, res) {
       checkIn,
       checkOut,
       customer,
-      roomType
+      roomType,
     );
     return res.status(200).json(roomCustomer);
   } catch (error) {
@@ -118,6 +120,7 @@ export async function getRoomCustomer(req, res) {
 export async function getRoomsByRoomTypeId(req, res) {
   try {
     const { id } = req.params;
+    
     const room = await getRoomsByRoomTypeIdService(id);
     return res.status(200).json({ room, message: "Thành Công !!" });
   } catch (error) {
@@ -160,7 +163,7 @@ export async function calculateRoomPrice(req, res) {
     const result = await calculatePriceRoomService(
       bookingStart,
       bookingEnd,
-      roomId
+      roomId,
     );
 
     return res.status(200).json({

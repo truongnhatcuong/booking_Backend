@@ -1,3 +1,4 @@
+import redisClient from "../repositories/redisClient.js";
 import {
   addImageToRoomRepo,
   createRoomRepo,
@@ -26,7 +27,7 @@ export async function getAllRoomService(
   roomType,
   search,
   page,
-  limit
+  limit,
 ) {
   const skip = (page - 1) * limit;
   const take = limit;
@@ -44,7 +45,7 @@ export async function getAllRoomService(
     roomtypeArray,
     search,
     skip,
-    take
+    take,
   );
   return {
     data,
@@ -87,20 +88,37 @@ export async function getRoomCustomerService(
   checkIn,
   checkOut,
   customer,
-  roomType
+  roomType,
 ) {
   const getRoomCustomer = await getRoomCustomerRepo(
     checkIn,
     checkOut,
     customer,
-    roomType
+    roomType,
   );
   return getRoomCustomer;
 }
 
 export async function getRoomsByRoomTypeIdService(id) {
-  const room = await getRoomsByRoomTypeIdRepo(id);
-  return room;
+  const cacheKey = `roomType:${id}`;
+  try {
+    const cachedData = await redisClient.get(cacheKey);
+    if (cachedData) {
+      console.log("🚀 [REDIS]: Lấy từ Cache Cloud");
+      return JSON.parse(cachedData);
+    }
+  } catch (error) {
+    console.error("❌ Error fetching cached data:", error);
+  }
+  const roomType = await getRoomsByRoomTypeIdRepo(id);
+
+  if (!roomType) throw new Error("Không tìm thấy loại phòng.");
+  try {
+    await redisClient.setEx(cacheKey, 3600, JSON.stringify(roomType));
+  } catch (err) {
+    console.error("⚠️ Không thể lưu Cache:", err.message);
+  }
+  return roomType;
 }
 
 export async function getRoomByIdService(id) {
@@ -126,7 +144,7 @@ export async function getBookedDatesService(roomId) {
 export async function calculatePriceRoomService(
   bookingStart,
   bookingEnd,
-  roomId
+  roomId,
 ) {
   const room = await findRoomForSeason(bookingStart, bookingEnd, roomId);
   if (!room) throw new Error("Không tìm thấy phòng.");

@@ -5,16 +5,50 @@ import {
   getBlogRepo,
   getBlogToSlugRepo,
   publishedBlogRepo,
+  totalBlogRepo,
   updateBlogRepo,
 } from "../repositories/blog.repo.js";
+import redisClient from "../repositories/redisClient.js";
 
-export async function getBlogService() {
-  const blog = await getBlogRepo();
-  return blog;
+export async function getBlogService({ page = 1, limit = 10 }) {
+  const safePage = Math.max(Number(page) || 1, 1); // Đảm bảo page >= 1
+  const safeLimit = Math.max(Number(limit) || 10, 1); // Đảm bảo limit >= 1
+
+  const skip = (safePage - 1) * safeLimit;
+
+  try {
+    const [blogData, total] = await Promise.all([
+      getBlogRepo({ skip, limit: safeLimit }), // Lấy dữ liệu blog
+      totalBlogRepo(), // Đếm tổng số blog
+    ]);
+
+    return {
+      data: blogData,
+      totalRecords: total,
+      pageCurrent: safePage,
+      totalPages: Math.ceil(total / safeLimit), // Tính tổng số trang
+    };
+  } catch (error) {
+    console.error("Error fetching blog data:", error);
+    throw new Error("Failed to fetch blog data");
+  }
 }
-
 export async function getBlogToSlugService(slug) {
   const blogToSlug = await getBlogToSlugRepo(slug);
+  const cacheKey = `blog:slug:${slug}`;
+  const cacheData = await redisClient.get(cacheKey);
+  if (cacheData) {
+    console.log("🚀 [REDIS]: Lấy từ Cache Cloud");
+    return JSON.parse(cacheData);
+  }
+  if (!blogToSlug) {
+    throw new Error("Không tìm thấy bài viết với slug này.");
+  }
+  try {
+    await redisClient.setEx(cacheKey, 3600, JSON.stringify(blogToSlug));
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy dữ liệu từ Redis:", error);
+  }
   return blogToSlug;
 }
 
