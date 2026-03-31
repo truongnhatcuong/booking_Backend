@@ -12,8 +12,22 @@ export async function CreateSeasonalRateRepo(data) {
   const { startDate, endDate, seasonName, multiplier, roomIds } = data;
 
   const result = await prisma.$transaction(async (tx) => {
-    // Duyệt qua tất cả roomIds, xử lý tuần tự hoặc song song (ở đây song song có kiểm soát)
     const promises = roomIds.map(async (roomId) => {
+      // Kiểm tra trùng thời gian
+      const existingSeason = await tx.seasonalRate.findFirst({
+        where: {
+          roomId: roomId,
+          startDate: { lte: endDate },
+          endDate: { gte: startDate },
+        },
+      });
+
+      if (existingSeason) {
+        throw new Error(
+          `phòng này đã có mùa giá trong khoảng thời gian này: ${existingSeason.seasonName} (${existingSeason.startDate.toISOString().split("T")[0]} đến ${existingSeason.endDate.toISOString().split("T")[0]})`,
+        );
+      }
+
       const seasonalRate = await tx.seasonalRate.create({
         data: {
           startDate,
@@ -80,7 +94,7 @@ cron.schedule(
       isRunningStart = false;
     }
   },
-  { timezone: "Asia/Ho_Chi_Minh" }
+  { timezone: "Asia/Ho_Chi_Minh" },
 );
 
 let isRunning = false;
@@ -126,7 +140,7 @@ cron.schedule(
       isRunning = false;
     }
   },
-  { timezone: "Asia/Ho_Chi_Minh" }
+  { timezone: "Asia/Ho_Chi_Minh" },
 );
 
 export async function findSeasonalRateById(id) {
