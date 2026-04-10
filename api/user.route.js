@@ -12,6 +12,11 @@ import signUpController, {
   refreshToken,
   createGuest,
   logout,
+  loginWithFaceController,
+  getFaceDescriptorController,
+  updateFaceDescriptorController,
+  deleteFaceDescriptorController,
+  getFaceStatusController,
 } from "../controller/user.controller.js";
 import { authCustomer } from "../lib/authCustomer.js";
 import { authEmployee } from "../lib/authEmployee.js";
@@ -24,7 +29,24 @@ routerUser.post("/login", loginController);
 routerUser.post("/createCustomer", authEmployee, createCustomer);
 routerUser.post("/guest", authCustomer, createGuest);
 routerUser.put("/customer/:id", updateUser);
+routerUser.post("/login/face", loginWithFaceController);
+routerUser.post("/login/face/descriptor", getFaceDescriptorController);
 routerUser.post("/user/changePassword", authCustomer, changePassword);
+routerUser.put(
+  "/face-descriptor",
+  authCustomer,
+  updateFaceDescriptorController,
+);
+routerUser.delete(
+  "/face-descriptor",
+  authCustomer,
+  deleteFaceDescriptorController,
+);
+routerUser.get(
+  "/face-descriptor/status",
+  authCustomer,
+  getFaceStatusController,
+);
 routerUser.get("/customer", getAllCustomer);
 routerUser.get("/user", authCustomer, getUserController);
 routerUser.get("/auditlog", getAuditLog);

@@ -20,6 +20,11 @@ import {
 import NotFoundError from "../errors/not-found.error.js";
 import { sendResetMail } from "../lib/mailer.js";
 import { prisma } from "../lib/client.js";
+import {
+  compareFaces,
+  deserializeDescriptor,
+  serializeDescriptor,
+} from "./face.Service.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 const REFRESH_TOKEN_SECRET =
@@ -35,18 +40,20 @@ export default async function signUp({
   city,
   country,
   idNumber,
+  faceDescriptor,
 }) {
   const existingUser = await findUserByEmail(email);
   const existIdNumber = await findIDNumber(idNumber);
 
-  if (existingUser) {
-    throw new Error("Email đã tồn tại");
-  }
-  if (existIdNumber) {
-    throw new Error("CCCD đã tồn tại trong hệ thống");
-  }
+  if (existingUser) throw new Error("Email đã tồn tại");
+  if (existIdNumber) throw new Error("CCCD đã tồn tại trong hệ thống");
 
   const hashedPassword = await bcrypt.hash(password, 10);
+
+  // Log 1: kiểm tra serialize
+  const serialized = faceDescriptor
+    ? serializeDescriptor(faceDescriptor)
+    : null;
 
   const newUser = await createUser({
     firstName,
@@ -56,24 +63,19 @@ export default async function signUp({
     password: hashedPassword,
     userType: "CUSTOMER",
     status: "ACTIVE",
+    faceDescriptor: serialized,
     customer: {
-      create: {
-        address,
-        city,
-        country,
-        idNumber,
-      },
+      create: { address, city, country, idNumber },
     },
   });
 
   const token = jwt.sign(
     { id: newUser.id, userType: newUser.userType },
     JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "1h" },
   );
 
   await updateUserToken(newUser.id, token);
-
   return { accessToken: token, user: newUser };
 }
 
@@ -115,6 +117,56 @@ export async function login({ email, password, remember }) {
 
   return { accessToken: token, refreshToken };
 }
+
+export const faceLoginService = async (email, descriptor) => {
+  // 1. Include employee để lấy role
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: {
+      employee: {
+        include: { roles: { include: { role: true } } },
+      },
+    },
+  });
+
+  // 2. Validation
+  if (!user) throw new Error("USER_NOT_FOUND");
+  if (user.status !== "ACTIVE") throw new Error("ACCOUNT_RESTRICTED");
+  if (!user.faceDescriptor) throw new Error("FACE_NOT_REGISTERED");
+
+  // 3. Parse JSON string → array rồi mới so sánh
+  const savedDescriptor = deserializeDescriptor(user.faceDescriptor);
+  if (!savedDescriptor) throw new Error("FACE_NOT_REGISTERED");
+
+  const { matched, distance } = compareFaces(savedDescriptor, descriptor);
+  if (!matched) {
+    const error = new Error("FACE_NOT_MATCHED");
+    error.distance = distance.toFixed(4);
+    throw error;
+  }
+
+  // 4. Payload & Token
+  let role = "";
+  if (user.userType === "EMPLOYEE" && user.employee) {
+    role = user.employee.roles[0]?.role?.name || "";
+  }
+
+  const payload = {
+    id: user.id,
+    userType: user.userType,
+    lastName: user.lastName,
+    role,
+  };
+
+  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: "15m",
+  });
+  const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: "7d",
+  });
+
+  return { accessToken, refreshToken, user: payload };
+};
 
 export async function refreshTokenService(refreshToken) {
   if (!refreshToken) throw new NotFoundError("Thiếu refresh token");
@@ -187,7 +239,7 @@ export async function createCustomerService({
 export async function changePasswordService(
   userId,
   currentPassword,
-  newPassword
+  newPassword,
 ) {
   const user = await findIdUser(userId);
   if (!user) throw new Error("Người dùng không tồn tại");
@@ -247,10 +299,10 @@ export async function createGuestService(data) {
     if (activeBooking) {
       throw new Error(
         `Người này đã có đặt phòng ${activeBooking.bookingItems[0].room.roomNumber} từ ${new Date(
-          activeBooking.checkInDate
+          activeBooking.checkInDate,
         ).toLocaleDateString("vi-VN")} đến ${new Date(
-          activeBooking.checkOutDate
-        ).toLocaleDateString("vi-VN")}. Vui lòng chọn thời gian khác.`
+          activeBooking.checkOutDate,
+        ).toLocaleDateString("vi-VN")}. Vui lòng chọn thời gian khác.`,
       );
     }
   }

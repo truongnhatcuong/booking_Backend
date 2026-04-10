@@ -21,6 +21,7 @@ import {
   formatRoomTablePayload,
   safeJsonParse,
 } from "../lib/suportAi.js";
+import { prisma } from "../lib/client.js";
 
 const llm1 = new ModelAi({
   apiKey: process.env.OPENAI_API_KEY,
@@ -777,3 +778,106 @@ export async function generateMiniStatsService(message) {
 
   return formatNaturalText(data, action);
 }
+
+const PASSTHROUGH_INTENTS = ["go_home", "book_room", "unknown", "hotel_info"];
+
+export const processVoiceCommand = async (prompt) => {
+  const result = await llm1._call(prompt);
+  const jsonMatch = result.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("KHONG_PARSE_DUOC_JSON");
+
+  const parsed = JSON.parse(jsonMatch[0]);
+
+  // ✅ Không cần DB → pass-through
+  if (PASSTHROUGH_INTENTS.includes(parsed.intent)) {
+    return {
+      intent: parsed.intent,
+      roomType: parsed.roomType || null,
+      answer: parsed.answer || null,
+    };
+  }
+
+  // ✅ Xem phòng theo số
+  if (parsed.intent === "view_room" && parsed.roomNumber) {
+    const room = await prisma.room.findFirst({
+      where: { roomNumber: String(parsed.roomNumber) },
+      select: {
+        id: true,
+        roomNumber: true,
+        status: true,
+        roomType: { select: { id: true, name: true } },
+      },
+    });
+
+    if (!room) {
+      return {
+        intent: parsed.intent,
+        roomNumber: parsed.roomNumber,
+        error: `Không tìm thấy phòng ${parsed.roomNumber}`,
+      };
+    }
+    return { intent: parsed.intent, room };
+  }
+
+  // ✅ Tìm phòng theo loại
+  if (parsed.intent === "search_by_type" && parsed.roomType) {
+    const rooms = await prisma.room.findMany({
+      where: {
+        status: "AVAILABLE",
+        roomType: { name: { contains: parsed.roomType } },
+      },
+      select: {
+        id: true,
+        roomNumber: true,
+        status: true,
+        originalPrice: true,
+        roomType: { select: { id: true, name: true, description: true } },
+      },
+    });
+
+    return {
+      intent: parsed.intent,
+      roomType: parsed.roomType,
+      rooms,
+      roomTypeId: rooms[0]?.roomType?.id || null,
+    };
+  }
+
+  if (parsed.intent === "blog_post") {
+    const keyword = parsed.blogKeyword || "";
+
+    const blogPost = await prisma.blogPost.findFirst({
+      where: keyword ? { title: { contains: keyword } } : {},
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        coverImage: true,
+        slug: true,
+      },
+    });
+    if (!blogPost) {
+      await prisma.blogPost.findFirst({
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          coverImage: true,
+          slug: true,
+        },
+      });
+    }
+    return {
+      intent: parsed.intent,
+      blogPost,
+      answer: blogPost ? null : "Không tìm thấy bài viết phù hợp",
+    };
+  }
+
+  // ✅ Fallback — intent không xác định
+  return {
+    intent: "unknown",
+    answer: parsed.answer || null,
+  };
+};

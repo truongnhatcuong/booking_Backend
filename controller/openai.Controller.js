@@ -1,9 +1,11 @@
+import { getGoogleTTS } from "../services/face.Service.js";
 import {
   generateMiniStatsService,
   generatePostService,
   GetChatHistoryService,
   OpenAIService,
   OPenAITestService,
+  processVoiceCommand,
 } from "../services/openai.service.js";
 
 export async function chatController(req, res) {
@@ -99,3 +101,46 @@ export async function generateMiniStats(req, res) {
     });
   }
 }
+
+export async function parseVoiceCommand(req, res) {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ message: "Thiếu prompt từ giọng nói" });
+    }
+
+    const data = await processVoiceCommand(prompt);
+
+    // Xử lý mã trạng thái dựa trên dữ liệu service trả về
+    if (data.error) {
+      return res.status(404).json(data);
+    }
+
+    return res.json(data);
+  } catch (error) {
+    console.error("Voice Controller Error:", error);
+
+    // Phân loại lỗi để trả về status code phù hợp
+    if (error.message === "KHONG_PARSE_DUOC_JSON") {
+      return res.status(422).json({ message: "AI không hiểu được lệnh này" });
+    }
+
+    return res.status(500).json({ message: "Lỗi hệ thống xử lý giọng nói" });
+  }
+}
+export const streamTTS = async (req, res) => {
+  try {
+    const { text } = req.query;
+    if (!text)
+      return res.status(400).json({ message: "Thiếu nội dung văn bản" });
+
+    const audioBuffer = await getGoogleTTS(text);
+
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(audioBuffer);
+  } catch (error) {
+    console.error("TTS Controller Error:", error);
+    res.status(500).json({ message: "Không thể tạo giọng nói" });
+  }
+};

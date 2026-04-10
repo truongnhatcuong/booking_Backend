@@ -20,6 +20,7 @@ export const userSchema = z.object({
     .max(255, { message: "Mật khẩu quá dài" }),
   country: z.string().min(1, { message: "Vui lòng nhập quốc gia" }),
   idNumber: z.string().min(1, { message: "Vui lòng nhập số CCCD/Passport" }),
+  faceDescriptor: z.array(z.number()).length(128).nullable().optional(),
 });
 
 export const UserUpdateSchema = z.object({

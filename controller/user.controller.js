@@ -1,3 +1,5 @@
+import { setTokenCookies } from "../helper/setTokenCookies.js";
+import { prisma } from "../lib/client.js";
 import { hasUserPermission } from "../lib/hasUserPermission.js";
 import {
   userSchema,
@@ -6,11 +8,13 @@ import {
   changePasswordSchema,
   GuestSchema,
 } from "../schemas/UserSchema.js";
+import { updateFaceDescriptorService } from "../services/face.Service.js";
 import signUp, {
   changePasswordService,
   createCustomerService,
   createGuestService,
   disableUserService,
+  faceLoginService,
   forgotPasswordService,
   getAllCustomerService,
   getUser,
@@ -23,6 +27,9 @@ import signUp, {
 // đăng kí
 export default async function signUpController(req, res) {
   const parsed = userSchema.safeParse(req.body);
+
+  console.log(req.body);
+
   if (!parsed.success) {
     return res.status(400).json({ message: parsed.error.issues[0].message });
   }
@@ -73,6 +80,130 @@ export async function loginController(req, res) {
     return res
       .status(200)
       .json({ accessToken, message: "Đăng Nhập Thành Công" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function loginWithFaceController(req, res) {
+  try {
+    const { email, descriptor } = req.body;
+
+    // Validation cơ bản ở layer controller
+    if (!email || !descriptor?.length) {
+      return res
+        .status(400)
+        .json({ message: "Thiếu email hoặc dữ liệu khuôn mặt" });
+    }
+
+    // Gọi service xử lý logic
+    const { accessToken, refreshToken } = await faceLoginService(
+      email,
+      descriptor,
+    );
+
+    // Xử lý cookie và response thành công
+    setTokenCookies(res, accessToken, refreshToken, false);
+
+    return res.status(200).json({
+      accessToken,
+      message: "Đăng nhập thành công",
+    });
+  } catch (error) {
+    // Mapping các mã lỗi từ service sang HTTP Status Code
+    switch (error.message) {
+      case "USER_NOT_FOUND":
+        return res.status(404).json({ message: "Người dùng không tồn tại" });
+      case "ACCOUNT_RESTRICTED":
+        return res.status(403).json({ message: "Tài khoản bị hạn chế" });
+      case "FACE_NOT_REGISTERED":
+        return res.status(400).json({ message: "Chưa đăng ký khuôn mặt" });
+      case "FACE_NOT_MATCHED":
+        return res.status(401).json({
+          message: "Khuôn mặt không khớp",
+          distance: error.distance,
+        });
+      default:
+        console.error(error);
+        return res.status(500).json({ message: "Lỗi hệ thống" });
+    }
+  }
+}
+
+// controllers/authController.js
+export async function getFaceDescriptorController(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Vui lòng cung cấp email" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { faceDescriptor: true, status: true },
+    });
+
+    if (!user)
+      return res.status(404).json({ message: "Người dùng không tồn tại" });
+    if (user.status !== "ACTIVE")
+      return res.status(403).json({ message: "Tài khoản bị hạn chế" });
+    if (!user.faceDescriptor)
+      return res.status(400).json({ message: "Chưa đăng ký khuôn mặt" });
+
+    return res.status(200).json({
+      faceDescriptor: JSON.parse(user.faceDescriptor),
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Lỗi hệ thống" + error });
+  }
+}
+
+export async function updateFaceDescriptorController(req, res) {
+  try {
+    const { descriptor } = req.body;
+    const userId = req.user.id;
+
+    if (
+      !descriptor ||
+      !Array.isArray(descriptor) ||
+      descriptor.length !== 128
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Dữ liệu khuôn mặt không hợp lệ" });
+    }
+
+    await updateFaceDescriptorService(userId, descriptor);
+
+    return res.status(200).json({ message: "Cập nhật khuôn mặt thành công" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function deleteFaceDescriptorController(req, res) {
+  try {
+    const userId = req.user.id;
+    await prisma.user.update({
+      where: { id: userId },
+      data: { faceDescriptor: null },
+    });
+    return res.status(200).json({ message: "Đã xóa khuôn mặt" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function getFaceStatusController(req, res) {
+  try {
+    const userId = req.user.id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { faceDescriptor: true },
+    });
+    return res.status(200).json({
+      hasFace: !!user?.faceDescriptor,
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -149,7 +280,7 @@ export async function changePassword(req, res) {
     const result = await changePasswordService(
       userId,
       currentPassword,
-      newPassword
+      newPassword,
     );
 
     return res.status(200).json(result);
