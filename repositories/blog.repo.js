@@ -39,22 +39,44 @@ export async function getBlogToSlugRepo(slug) {
   return blog;
 }
 
-export async function getBlogEmployeeRepo() {
-  const blog = await prisma.blogPost.findMany({
-    include: {
-      employee: {
-        select: {
-          user: {
-            select: {
-              firstName: true,
-              lastName: true,
+export async function getBlogEmployeeRepo(
+  page = 1,
+  limit = 10,
+  search,
+  published,
+) {
+  const where = {
+    ...(search && {
+      OR: [{ title: { contains: search } }],
+    }),
+    ...(published !== undefined && {
+      published: published === "true",
+    }),
+  };
+
+  const [blogs, total] = await prisma.$transaction([
+    prisma.blogPost.findMany({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        employee: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
             },
           },
         },
       },
-    },
-  });
-  return blog;
+    }),
+    prisma.blogPost.count({ where }),
+  ]);
+
+  return { blogs, total };
 }
 
 export async function createBlogRepo({

@@ -24,9 +24,10 @@ export async function getBlogService({ page = 1, limit = 10 }) {
 
     return {
       data: blogData,
-      totalRecords: total,
-      pageCurrent: safePage,
-      totalPages: Math.ceil(total / safeLimit), // Tính tổng số trang
+      total,
+      limit: safeLimit,
+      page: safePage,
+      totalPages: Math.ceil(total / safeLimit),
     };
   } catch (error) {
     console.error("Error fetching blog data:", error);
@@ -52,9 +53,26 @@ export async function getBlogToSlugService(slug) {
   return blogToSlug;
 }
 
-export async function getBlogEmployeeService() {
-  const blog = await getBlogEmployeeRepo();
-  return blog;
+export async function getBlogEmployeeService(
+  page = 1,
+  limit = 10,
+  search,
+  published,
+) {
+  const { blogs, total } = await getBlogEmployeeRepo(
+    page,
+    limit,
+    search,
+    published,
+  );
+
+  return {
+    blogs,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 }
 
 export async function createBlogService({

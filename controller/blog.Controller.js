@@ -31,14 +31,20 @@ export async function getBlogToSlug(req, res) {
 }
 
 export async function getBlogEmployee(req, res) {
+  const { page, limit, search, published } = req.query;
+
   try {
-    const getBlog = await getBlogEmployeeService(req.body);
-    return res.status(200).json(getBlog);
+    const result = await getBlogEmployeeService(
+      Number(page) || 1,
+      Number(limit) || 10,
+      search,
+      published,
+    );
+    return res.status(200).json({ ...result, message: "Thành công" });
   } catch (error) {
-    return res.status(400).json(error);
+    return res.status(500).json({ message: error.message });
   }
 }
-
 export async function createBlog(req, res) {
   const parsed = blogPostSchema.safeParse(req.body);
 

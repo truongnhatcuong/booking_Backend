@@ -73,7 +73,7 @@ export async function overlappingBooking(
   checkInDate,
   checkOutDate,
   customerId,
-  guestId
+  guestId,
 ) {
   console.log(checkInDate, checkOutDate, customerId, guestId);
 
@@ -127,10 +127,13 @@ export async function getAllBookingRepo(
   status,
   checkInDate,
   checkOutDate,
-  totalAmount = "default"
+  totalAmount = "default",
+  page = 1,
+  limit = 10,
 ) {
   const checkIn = checkInDate ? new Date(checkInDate) : null;
   const checkOut = checkOutDate ? new Date(checkOutDate) : null;
+
   let orderBy;
   if (totalAmount === "asc") {
     orderBy = [{ totalAmount: "asc" }, { bookingDate: "desc" }];
@@ -140,69 +143,66 @@ export async function getAllBookingRepo(
     orderBy = { bookingDate: "desc" };
   }
 
-  return await prisma.booking.findMany({
-    where: {
-      ...(idNumber && {
-        customer: {
-          idNumber: { equals: idNumber },
-        },
-      }),
-      ...(status && { status }),
+  const where = {
+    ...(idNumber && { customer: { idNumber: { equals: idNumber } } }),
+    ...(status && { status }),
+    ...(checkIn &&
+      !isNaN(checkIn.getTime()) && { checkOutDate: { gte: checkIn } }),
+    ...(checkOut &&
+      !isNaN(checkOut.getTime()) && { checkInDate: { lte: checkOut } }),
+  };
 
-      //ngay nhan phong
-      ...(checkIn &&
-        !isNaN(checkIn.getTime()) && { checkOutDate: { gte: checkIn } }),
-
-      //ngay tra phong
-      ...(checkOut &&
-        !isNaN(checkOut.getTime()) && { checkInDate: { lte: checkOut } }),
-    },
-    select: {
-      id: true,
-      checkInDate: true,
-      checkOutDate: true,
-      status: true,
-      totalAmount: true,
-      totalGuests: true,
-      bookingItems: {
-        select: {
-          room: {
-            select: {
-              roomType: {
-                select: {
-                  name: true,
-                },
+  const [bookings, total] = await prisma.$transaction([
+    prisma.booking.findMany({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        checkInDate: true,
+        checkOutDate: true,
+        status: true,
+        totalAmount: true,
+        totalGuests: true,
+        bookingItems: {
+          select: {
+            room: {
+              select: {
+                roomType: { select: { name: true } },
+                roomNumber: true,
               },
-              roomNumber: true,
             },
           },
         },
-      },
-      customer: {
-        select: {
-          id: true,
-          idNumber: true,
-          user: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
+        customer: {
+          select: {
+            id: true,
+            idNumber: true,
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+              },
             },
           },
         },
-      },
-      payments: {
-        select: {
-          id: true,
-          status: true,
-          paymentMethod: true,
-          amount: true,
+        payments: {
+          select: {
+            id: true,
+            status: true,
+            paymentMethod: true,
+            amount: true,
+          },
         },
       },
-    },
-    orderBy,
-  });
+      orderBy,
+    }),
+    prisma.booking.count({ where }),
+  ]);
+
+  return { bookings, total };
 }
 
 export async function confirmStatusRepo(id) {
@@ -242,7 +242,7 @@ export async function confirmStatusRepo(id) {
     });
   } else {
     throw new Error(
-      "Trạng thái hiện tại không hợp lệ hoặc không thể chuyển trạng thái"
+      "Trạng thái hiện tại không hợp lệ hoặc không thể chuyển trạng thái",
     );
   }
 

@@ -1,4 +1,10 @@
 import { prisma } from "../lib/client.js";
+import {
+  startOfWeek,
+  startOfMonth,
+  startOfQuarter,
+  startOfYear,
+} from "date-fns";
 
 const countBookingsInRange = async (from, to) => {
   return prisma.booking.count({
@@ -123,6 +129,74 @@ const BookingSouthRepoByMonth = async (year) => {
   return data;
 };
 
+// Repo
+
+const getTopRoomStatsRepo = async (period = "month") => {
+  const now = new Date();
+  let startDate;
+
+  if (period === "week") startDate = startOfWeek(now, { weekStartsOn: 1 });
+  else if (period === "month") startDate = startOfMonth(now);
+  else if (period === "quarter") startDate = startOfQuarter(now);
+  else if (period === "year") startDate = startOfYear(now);
+  else startDate = startOfMonth(now);
+
+  const bookingItems = await prisma.bookingItem.findMany({
+    where: {
+      booking: {
+        checkInDate: { gte: startDate },
+        status: { not: "CANCELLED" },
+      },
+    },
+    select: {
+      room: {
+        select: {
+          id: true,
+          roomNumber: true,
+          roomType: { select: { id: true, name: true } },
+        },
+      },
+      booking: {
+        select: { totalAmount: true },
+      },
+    },
+  });
+
+  // Top loại phòng theo doanh thu
+  const roomTypeMap = new Map();
+  for (const item of bookingItems) {
+    const { id, name } = item.room.roomType;
+    const amount = Number(item.booking.totalAmount) || 0;
+    if (!roomTypeMap.has(id))
+      roomTypeMap.set(id, { id, name, totalRevenue: 0, count: 0 });
+    roomTypeMap.get(id).totalRevenue += amount;
+    roomTypeMap.get(id).count += 1;
+  }
+
+  // Top phòng theo lượt thuê
+  const roomMap = new Map();
+  for (const item of bookingItems) {
+    const { id, roomNumber, roomType } = item.room;
+    if (!roomMap.has(id))
+      roomMap.set(id, {
+        id,
+        roomNumber,
+        roomTypeName: roomType.name,
+        count: 0,
+      });
+    roomMap.get(id).count += 1;
+  }
+
+  const topRoomTypes = [...roomTypeMap.values()]
+    .sort((a, b) => b.totalRevenue - a.totalRevenue)
+    .slice(0, 5);
+
+  const topRooms = [...roomMap.values()]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  return { topRoomTypes, topRooms };
+};
 export {
   countBookingsInRange,
   sumRevenueInRange,
@@ -130,4 +204,5 @@ export {
   RevenueTotalMonthRepo,
   CustomerCountByMonthRepo,
   BookingSouthRepoByMonth,
+  getTopRoomStatsRepo,
 };

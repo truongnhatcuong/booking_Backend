@@ -44,7 +44,7 @@ export async function bookingService({
     checkInDate,
     checkOutDate,
     customerId,
-    guestId
+    guestId,
   );
 
   const room = await FindRoom(roomId);
@@ -92,16 +92,27 @@ export async function getAllBookingService(
   status = {},
   checkInDate,
   checkOutDate,
-  totalAmount
+  totalAmount,
+  page = 1,
+  limit = 10,
 ) {
-  const bookings = await getAllBookingRepo(
+  const { bookings, total } = await getAllBookingRepo(
     idNumber,
     status,
     checkInDate,
     checkOutDate,
-    totalAmount
+    totalAmount,
+    page,
+    limit,
   );
-  return bookings;
+
+  return {
+    bookings,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 }
 
 export async function bookingToEmpoyeeService({
@@ -119,7 +130,7 @@ export async function bookingToEmpoyeeService({
   const overlapBooking = await overlappingBooking(
     checkInDate,
     checkOutDate,
-    customerId
+    customerId,
   );
   if (checkInDate && checkOutDate) {
     const checkIn = new Date(checkInDate);
@@ -160,7 +171,7 @@ export async function bookingToEmpoyeeService({
 
   if (overlapBooking) {
     throw new Error(
-      `Bạn đã có đặt phòng . Vui lòng chọn khoảng thời gian khác.`
+      `Bạn đã có đặt phòng . Vui lòng chọn khoảng thời gian khác.`,
     );
   }
   const booking = await BookingRepo({

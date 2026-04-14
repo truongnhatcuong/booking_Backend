@@ -3,6 +3,7 @@ import {
   countBookingsInRange,
   countCustomersInRange,
   CustomerCountByMonthRepo,
+  getTopRoomStatsRepo,
   RevenueTotalMonthRepo,
   sumRevenueInRange,
 } from "../repositories/statistical.repo.js";
@@ -53,7 +54,7 @@ export async function getStatisticalService(range) {
 }
 
 export async function RevenueTotalMonthService(
-  year = new Date().getFullYear()
+  year = new Date().getFullYear(),
 ) {
   const RevenueTotalMonth = await RevenueTotalMonthRepo(year);
   const months = Array.from({ length: 12 }, (_, i) => `Tháng ${i + 1}`);
@@ -64,7 +65,7 @@ export async function RevenueTotalMonthService(
 }
 
 export async function CustomerCountByMonthService(
-  year = new Date().getFullYear()
+  year = new Date().getFullYear(),
 ) {
   const counts = await CustomerCountByMonthRepo(year);
   const months = Array.from({ length: 12 }, (_, i) => `Tháng ${i + 1}`);
@@ -77,3 +78,8 @@ export const getRevenueOnlineOfflineService = async (year) => {
     data: revenueBookingResource,
   };
 };
+
+// Service
+export async function getTopRoomStatsService(period) {
+  return await getTopRoomStatsRepo(period);
+}

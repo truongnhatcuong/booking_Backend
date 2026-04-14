@@ -169,7 +169,7 @@ export const faceLoginService = async (email, descriptor) => {
 };
 
 export async function refreshTokenService(refreshToken) {
-  if (!refreshToken) throw new NotFoundError("Thiếu refresh token");
+  if (!refreshToken) return null;
 
   const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
 

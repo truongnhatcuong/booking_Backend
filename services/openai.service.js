@@ -779,7 +779,14 @@ export async function generateMiniStatsService(message) {
   return formatNaturalText(data, action);
 }
 
-const PASSTHROUGH_INTENTS = ["go_home", "book_room", "unknown", "hotel_info"];
+const PASSTHROUGH_INTENTS = ["book_room", "unknown", "hotel_info"];
+
+const PAGE_MAP = {
+  home: "/",
+  blog: "/blog",
+  about: "/about",
+  gallery: "/gallery",
+};
 
 export const processVoiceCommand = async (prompt) => {
   const result = await llm1._call(prompt);
@@ -794,6 +801,16 @@ export const processVoiceCommand = async (prompt) => {
       intent: parsed.intent,
       roomType: parsed.roomType || null,
       answer: parsed.answer || null,
+    };
+  }
+
+  if (parsed.intent === "navigate") {
+    const path = PAGE_MAP[parsed.page] ?? "/";
+    return {
+      intent: parsed.intent,
+      page: parsed.page,
+      path,
+      answer: null,
     };
   }
 
@@ -846,18 +863,49 @@ export const processVoiceCommand = async (prompt) => {
   if (parsed.intent === "blog_post") {
     const keyword = parsed.blogKeyword || "";
 
-    const blogPost = await prisma.blogPost.findFirst({
-      where: keyword ? { title: { contains: keyword } } : {},
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        coverImage: true,
-        slug: true,
-      },
-    });
+    let blogPost = null;
+
+    if (keyword) {
+      // Tách keyword thành từng từ, bỏ từ ngắn <= 2 ký tự
+      const words = keyword
+        .split(" ")
+        .map((w) => w.trim())
+        .filter((w) => w.length > 2);
+
+      // Tìm tất cả bài có title chứa ít nhất 1 từ
+      const blogPosts = await prisma.blogPost.findMany({
+        where: {
+          published: true,
+          OR: words.map((word) => ({
+            title: { contains: word },
+          })),
+        },
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          coverImage: true,
+          slug: true,
+        },
+      });
+
+      // Chọn bài match nhiều từ nhất
+      blogPost =
+        blogPosts.sort((a, b) => {
+          const scoreA = words.filter((w) =>
+            a.title.toLowerCase().includes(w.toLowerCase()),
+          ).length;
+          const scoreB = words.filter((w) =>
+            b.title.toLowerCase().includes(w.toLowerCase()),
+          ).length;
+          return scoreB - scoreA;
+        })[0] ?? null;
+    }
+
+    // Fallback lấy bài mới nhất nếu không tìm thấy
     if (!blogPost) {
-      await prisma.blogPost.findFirst({
+      blogPost = await prisma.blogPost.findFirst({
+        where: { published: true },
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -868,14 +916,110 @@ export const processVoiceCommand = async (prompt) => {
         },
       });
     }
+
     return {
       intent: parsed.intent,
       blogPost,
       answer: blogPost ? null : "Không tìm thấy bài viết phù hợp",
     };
   }
+  if (parsed.intent === "search_by_criteria") {
+    const { maxPrice, minPrice, floor, maxOccupancy, amenity, keyword } =
+      parsed.criteria || {};
 
-  // ✅ Fallback — intent không xác định
+    const targetPrice = maxPrice && !minPrice ? maxPrice : null;
+    const priceMin = targetPrice ? targetPrice * 0.8 : minPrice;
+    const priceMax = targetPrice ? targetPrice * 1.2 : maxPrice;
+
+    const rooms = await prisma.room.findMany({
+      where: {
+        status: "AVAILABLE",
+        ...(priceMax && { currentPrice: { lte: priceMax } }),
+        ...(priceMin && { currentPrice: { gte: priceMin } }),
+        ...(floor && { floor }),
+        ...(maxOccupancy && {
+          roomType: { maxOccupancy: { gte: maxOccupancy } },
+        }),
+        ...(amenity && {
+          roomType: {
+            amenities: {
+              some: { amenity: { name: { contains: amenity } } },
+            },
+          },
+        }),
+        ...(keyword && {
+          OR: [
+            // Nguyên cụm
+            { notes: { contains: keyword } },
+            // Từng từ fallback
+            ...keyword
+              .split(" ")
+              .filter((w) => w.length > 2)
+              .flatMap((word) => [{ notes: { contains: word } }]),
+          ],
+        }),
+      },
+      select: {
+        id: true,
+        roomNumber: true,
+        floor: true,
+        currentPrice: true,
+        notes: true,
+        roomType: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            maxOccupancy: true,
+          },
+        },
+      },
+      orderBy: { currentPrice: "asc" },
+    });
+
+    if (rooms.length === 0) {
+      return {
+        intent: parsed.intent,
+        rooms: [],
+        answer: "Xin lỗi, không tìm thấy phòng phù hợp với yêu cầu",
+      };
+    }
+
+    // AI chọn phòng phù hợp nhất
+    const pickPrompt = `
+Người dùng muốn tìm phòng: "${keyword || ""}"
+Điều kiện thêm: maxPrice:${maxPrice || "any"} floor:${floor || "any"} maxOccupancy:${maxOccupancy || "any"}
+
+Danh sách phòng:
+${rooms.map((r, i) => `${i + 1}. id:"${r.id}" roomTypeId:"${r.roomType.id}" tên:"${r.roomType.name}" tầng:${r.floor} giá:${Number(r.currentPrice).toLocaleString()}đ notes:"${r.notes?.slice(0, 200) || ""}"`).join("\n")}
+
+Đọc notes của từng phòng và chọn phòng phù hợp nhất với yêu cầu người dùng.
+Lưu ý: keyword có thể bị thiếu dấu tiếng Việt, hãy hiểu theo nghĩa gần nhất.
+Chỉ trả về JSON: {"id":"...","roomTypeId":"..."}
+`;
+
+    try {
+      const pickResult = await llm1._call(pickPrompt);
+      const pickJson = JSON.parse(pickResult.match(/\{[\s\S]*\}/)?.[0] || "{}");
+      const best = rooms.find((r) => r.id === pickJson.id) ?? rooms[0];
+
+      return {
+        intent: parsed.intent,
+        rooms,
+        path: `/rooms/${best.roomType.id}/${best.id}`,
+        answer: null,
+      };
+    } catch {
+      // Fallback nếu AI parse lỗi
+      const best = rooms[0];
+      return {
+        intent: parsed.intent,
+        rooms,
+        path: `/rooms/${best.roomType.id}/${best.id}`,
+        answer: null,
+      };
+    }
+  }
   return {
     intent: "unknown",
     answer: parsed.answer || null,

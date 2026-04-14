@@ -2,6 +2,7 @@ import {
   CustomerCountByMonthService,
   getRevenueOnlineOfflineService,
   getStatisticalService,
+  getTopRoomStatsService,
   RevenueTotalMonthService,
 } from "../services/statistical.service.js";
 
@@ -59,3 +60,13 @@ export const getRevenueOnlineOfflineController = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+export async function getTopRoomStats(req, res) {
+  const { period = "month" } = req.query;
+  try {
+    const result = await getTopRoomStatsService(period);
+    return res.status(200).json({ ...result, message: "Thành công" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
