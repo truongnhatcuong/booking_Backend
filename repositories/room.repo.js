@@ -28,7 +28,7 @@ export async function getAllRoomRepo(
   roomType,
   search,
   skip,
-  take
+  take,
 ) {
   const checkInDate = new Date(checkIn);
   const checkOutDate = new Date(checkOut);
@@ -92,9 +92,7 @@ export async function getAllRoomRepo(
         notes: true,
         roomTypeId: true,
         originalPrice: true,
-        images: {
-          take: 1,
-        },
+        images: true,
         roomType: {
           select: {
             id: true,
@@ -172,7 +170,7 @@ export async function getRoomCustomerRepo(
   checkIn,
   checkOut,
   customer,
-  roomType
+  roomType,
 ) {
   const checkInDate = new Date(checkIn);
   const checkOutDate = new Date(checkOut);

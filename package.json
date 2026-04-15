@@ -20,7 +20,7 @@
     "@langchain/openai": "^1.0.0",
     "@langchain/redis": "^1.0.0",
     "@payos/node": "^1.0.10",
-    "@prisma/client": "^6.6.0",
+    "@prisma/client": "^5.22.0",
     "@upstash/redis": "^1.35.6",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
@@ -55,6 +55,6 @@
     "eslint-config-prettier": "^10.1.2",
     "globals": "^16.0.0",
     "prettier": "^3.5.3",
-    "prisma": "^6.6.0"
+    "prisma": "^5.22.0"
   }
 }

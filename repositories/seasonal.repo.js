@@ -4,7 +4,14 @@ import cron from "node-cron";
 export async function getAllSeasonalRatesRepo() {
   return await prisma.seasonalRate.findMany({
     include: {
-      room: true,
+      room: {
+        select:{
+          id:true,
+          originalPrice:true,
+          currentPrice:true,
+          roomNumber:true,
+        }
+      }
     },
   });
 }

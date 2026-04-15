@@ -17,7 +17,6 @@ import {
   updateRoomService,
 } from "../services/room.service.js";
 
-
 export async function createRoom(req, res) {
   const parsed = createRoomSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -120,7 +119,7 @@ export async function getRoomCustomer(req, res) {
 export async function getRoomsByRoomTypeId(req, res) {
   try {
     const { id } = req.params;
-    
+
     const room = await getRoomsByRoomTypeIdService(id);
     return res.status(200).json({ room, message: "Thành Công !!" });
   } catch (error) {

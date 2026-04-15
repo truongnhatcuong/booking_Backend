@@ -1,3 +1,4 @@
+import { prisma } from "../lib/client.js";
 import {
   CreateSeasonalRateRepo,
   deleteSeasonalRateRepo,
@@ -32,16 +33,19 @@ export async function deleteSeasonalRateService(id) {
 }
 
 export async function updateSeasonalRateService(id, data) {
-  // 1️⃣ Lấy seasonal rate hiện tại từ DB
   const seasonalRate = await findSeasonalRateById(id);
   if (!seasonalRate) {
     throw new Error("Seasonal rate not found");
   }
-  // 2️⃣ Quy tắc: nếu mùa đang active thì không cho chỉnh sửa
-  if (seasonalRate.isActive) {
-    throw new Error("Không thể chỉnh sửa mùa giá đã kích hoạt .");
+
+  const today = new Date();
+
+  // ❌ Không cho sửa nếu đang active (trừ khi chỉ toggle isActive)
+  if (seasonalRate.isActive && data.isActive === undefined) {
+    throw new Error("Không thể chỉnh sửa mùa giá đã kích hoạt.");
   }
-  // 3️⃣ Quy tắc: kiểm tra logic ngày tháng (nếu người dùng cố cập nhật sai)
+
+  // ❌ Validate ngày
   if (data.startDate && data.endDate) {
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
@@ -49,6 +53,8 @@ export async function updateSeasonalRateService(id, data) {
       throw new Error("Ngày kết thúc phải sau ngày bắt đầu.");
     }
   }
+
+  // ❌ Validate multiplier
   if (data.multiplier !== undefined) {
     const multiplier = parseFloat(data.multiplier);
 
@@ -60,11 +66,58 @@ export async function updateSeasonalRateService(id, data) {
       throw new Error("Hệ số giá phải từ 0.5 đến 5.0");
     }
   }
-  const today = new Date();
-  if (new Date(seasonalRate.startDate) <= today && !seasonalRate.isActive) {
+
+  // 🔥 Xử lý bật/tắt thủ công
+  if (data.isActive !== undefined) {
+    const room = await prisma.room.findUnique({
+      where: { id: seasonalRate.roomId },
+      select: { originalPrice: true },
+    });
+
+    if (data.isActive === true) {
+      // 👉 bật → áp giá mùa
+      const newPrice = room.originalPrice * seasonalRate.multiplier;
+
+      await prisma.$transaction([
+        prisma.room.update({
+          where: { id: seasonalRate.roomId },
+          data: { currentPrice: newPrice },
+        }),
+        prisma.seasonalRate.update({
+          where: { id },
+          data: { isActive: true },
+        }),
+      ]);
+
+      return;
+    }
+
+    if (data.isActive === false) {
+      // 👉 tắt → trả giá về gốc
+      await prisma.$transaction([
+        prisma.room.update({
+          where: { id: seasonalRate.roomId },
+          data: { currentPrice: room.originalPrice },
+        }),
+        prisma.seasonalRate.update({
+          where: { id },
+          data: { isActive: false },
+        }),
+      ]);
+
+      return;
+    }
+  }
+
+  // ❌ Không cho sửa multiplier nếu đã tới ngày
+  if (
+    new Date(seasonalRate.startDate) <= today &&
+    today <= new Date(seasonalRate.endDate)
+  ) {
     throw new Error("Không thể thay đổi multiplier khi mùa đã bắt đầu.");
   }
-  // 4️⃣ Cập nhật seasonal rate
+
+  // ✅ update bình thường
   const updatedRate = await updateSeasonalRateRepo(id, data);
   return updatedRate;
 }

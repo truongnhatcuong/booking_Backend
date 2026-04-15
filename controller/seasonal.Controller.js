@@ -46,13 +46,14 @@ export async function deleteSeasonalRate(req, res) {
 export async function updateSeasonalRate(req, res) {
   try {
     const { id } = req.params;
-    const { startDate, endDate, seasonName, multiplier } = req.body;
+    const { startDate, endDate, seasonName, multiplier, isActive } = req.body;
 
     const updatedRate = await updateSeasonalRateService(id, {
       startDate,
       endDate,
       seasonName,
       multiplier,
+      isActive,
     });
     return res.status(200).json({ updatedRate });
   } catch (error) {

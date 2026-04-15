@@ -146,33 +146,41 @@ export async function calculatePriceRoomService(
   bookingEnd,
   roomId,
 ) {
-  const room = await findRoomForSeason(bookingStart, bookingEnd, roomId);
-  if (!room) throw new Error("Không tìm thấy phòng.");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const start = new Date(bookingStart);
-  const end = new Date(bookingEnd);
+  const start = bookingStart ? new Date(bookingStart) : new Date(today);
+  const end = bookingEnd ? new Date(bookingEnd) : new Date(today);
   start.setHours(0, 0, 0, 0);
   end.setHours(0, 0, 0, 0);
 
-  // Chuẩn hóa season trước khi dùng
-  const seasons = room.seasonalRates.map((s) => ({
-    start: new Date(s.startDate.setHours(0, 0, 0, 0)),
-    end: new Date(s.endDate.setHours(0, 0, 0, 0)),
-  }));
+  const room = await findRoomForSeason(start, end, roomId);
+  if (!room) throw new Error("Không tìm thấy phòng.");
+
+  // ✅ Dùng new Date() để tránh mutate object gốc
+  const seasons = room.seasonalRates.map((s) => {
+    const seasonStart = new Date(s.startDate);
+    const seasonEnd = new Date(s.endDate);
+    seasonStart.setHours(0, 0, 0, 0);
+    seasonEnd.setHours(0, 0, 0, 0);
+    return { start: seasonStart, end: seasonEnd };
+  });
 
   let total = 0;
 
-  for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+  // ✅ Khi không có bookingEnd, tính giá cho đúng 1 ngày (today)
+  const loopEnd = bookingEnd ? end : new Date(start.getTime() + 86400000);
+
+  for (let d = new Date(start); d < loopEnd; d.setDate(d.getDate() + 1)) {
     const day = new Date(d);
-
     const isSeasonDay = seasons.some((s) => day >= s.start && day <= s.end);
-
     total += isSeasonDay
       ? Number(room.currentPrice)
       : Number(room.originalPrice);
   }
 
   const bookingSeason = seasons.some((s) => start >= s.start && start <= s.end);
+
   return {
     total,
     currentPrice: Number(room.currentPrice),
