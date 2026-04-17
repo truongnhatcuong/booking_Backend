@@ -442,7 +442,6 @@ export async function generatePostService(topic) {
   const keyword = extractKeyword(topic);
 
   const url = `https://api.unsplash.com/search/photos?query=${keyword}&client_id=SbfhmV7iVU5kw8YQRh0p7cwiMdKmWvgSuPj-l_j5bvk`;
-  console.log(url);
 
   const response = await axios.get(url);
 
@@ -644,20 +643,19 @@ export async function generateMiniStatsService(message) {
     };
   }
 
+  function detectActionFromText(text) {
+    if (/(hôm nay|hom nay|tổng quan hôm nay)/i.test(text)) return "TODAY";
+    if (/(tuần này|tuan nay|trong tuần)/i.test(text)) return "THIS_WEEK";
+    if (/(tháng này|thang nay|trong tháng)/i.test(text)) return "THIS_MONTH";
+    if (/(năm nay|nam nay|trong năm)/i.test(text)) return "THIS_YEAR";
+    return "TODAY"; // default
+  }
   // 4) Xác định action range (TODAY/THIS_WEEK/THIS_MONTH/THIS_YEAR)
   const actionFromLLM = parsed?.action;
   const action =
     actionFromLLM && actionFromLLM !== "UNKNOWN"
       ? actionFromLLM
-      : /(hôm nay|hom nay|tổng quan hôm nay|tong quan hôm nay)/i.test(mLower)
-        ? "TODAY"
-        : /(tuần này|tuan nay|trong tuần)/i.test(mLower)
-          ? "THIS_WEEK"
-          : /(tháng này|thang nay|trong tháng)/i.test(mLower)
-            ? "THIS_MONTH"
-            : /(năm nay|nam nay|trong năm)/i.test(mLower)
-              ? "THIS_YEAR"
-              : "TODAY"; // default
+      : detectActionFromText(mLower);
 
   const rangeKey = ACTION_TO_RANGE[action];
   if (!rangeKey) return "Không hiểu yêu cầu thống kê mini.";

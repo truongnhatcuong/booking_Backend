@@ -1,8 +1,11 @@
 import NotFoundError from "../errors/not-found.error.js";
 import {
   CreateRoleEmployeeRepo,
+  FindRole,
   GetRoleEmployeeRepo,
+  RemoveEmployeeRoleByRoleIdRepo,
   RemoveEmployeeRoleRepo,
+  RemoveRoleRepo,
   RoleEmployeeRepo,
 } from "../repositories/roleEmployee.repo.js";
 
@@ -33,23 +36,31 @@ export async function UpdateRoleEmployeeService(id, data) {
   }
   return updatedRole;
 }
-export async function DeleteRoleEmployeeService(id) {
-  if (!id) {
-    throw new NotFoundError("ID is required");
-  }
-  const deletedRole = await CreateRoleEmployeeRepo(id);
-  if (!deletedRole) {
-    throw new NotFoundError("Role not found");
-  }
-  return deletedRole;
-}
 
 export async function RoleEmployeeService(idEmployee, idRole) {
   const result = await RoleEmployeeRepo(idEmployee, idRole);
   return result;
 }
 
-export async function RemoveEmployeeRoleService(id) {
-  const result = await RemoveEmployeeRoleRepo(id);
+export async function RemoveRoleService(id) {
+  // 1. Kiểm tra role tồn tại
+  const role = await FindRole(id);
+  if (!role) throw new Error("Vai trò không tồn tại");
+
+  // 2. Xóa employeeRole trước (tránh lỗi foreign key)
+  await RemoveEmployeeRoleByRoleIdRepo(id);
+
+  // 3. Xóa role
+  const result = await RemoveRoleRepo(id);
   return result;
+}
+
+export async function DeleteRoleEmployeeService(id) {
+  if (!id) {
+    throw new NotFoundError("ID is required");
+  }
+  const deletedRole = await RemoveEmployeeRoleRepo(id);
+  if (!deletedRole) {
+    throw new NotFoundError("Role not found");
+  }
 }

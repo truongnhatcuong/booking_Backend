@@ -1,8 +1,9 @@
 import { hasUserPermission } from "../lib/hasUserPermission.js";
 import {
   CreateRoleEmployeeService,
+  DeleteRoleEmployeeService,
   GetRoleEmployeeService,
-  RemoveEmployeeRoleService,
+  RemoveRoleService,
   RoleEmployeeService,
 } from "../services/roleEmployee.service.js";
 
@@ -57,22 +58,34 @@ export async function RoleEmployee(req, res) {
   }
 }
 
-export async function RemoveEmployeeRole(req, res) {
+export async function RemoveRole(req, res) {
   const { id } = req.params;
   if (!id) {
     return res.status(400).json({ message: "Thiếu id" });
   }
-  if (!hasUserPermission(req.user, "USER_UPDATE")) {
-    return res
-      .status(403)
-      .json({ message: "Bạn không có quyền hủy vai trò của nhân viên" });
-  }
 
   try {
-    const result = await RemoveEmployeeRoleService(id);
+    const result = await RemoveRoleService(id);
     return res.status(200).json(result);
   } catch (error) {
     console.error("Error removing employee role:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function DeleteRoleEmployeeById(req, res) {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ message: "ID is required" });
+  }
+
+  try {
+    const result = await DeleteRoleEmployeeService(id);
+    return res.status(200).json({
+      message: `id : ${result} của nhân viên nãy đã được xóa`,
+    });
+  } catch (error) {
+    console.error("Error deleting role employee:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }

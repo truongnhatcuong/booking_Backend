@@ -66,7 +66,7 @@ export async function disableUser(req, res) {
 
 export async function updateEmployee(req, res) {
   const { id } = req.params;
-  const { firstName, lastName, phone } = req.body;
+  const { firstName, lastName, phone, position, status } = req.body;
   // if (!hasUserPermission(req.user, "USER_UPDATE")) {
   //   return res
   //     .status(403)
@@ -78,6 +78,8 @@ export async function updateEmployee(req, res) {
       firstName,
       lastName,
       phone,
+      position,
+      status
     });
     return res
       .status(200)

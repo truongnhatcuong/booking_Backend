@@ -68,6 +68,15 @@ export async function getAllEmployeeRepo(search, skip, take) {
             { lastName: { contains: search || "" } },
           ],
         },
+        {
+          employee: {
+            roles: {
+              none: {
+                role: { name: "ADMIN" },
+              },
+            },
+          },
+        },
       ],
     },
     skip: Number(skip),
@@ -121,13 +130,16 @@ export async function updateEmployeeRepo(id, employeeData) {
     },
     include: {
       user: true,
-    },  
+    },
     data: {
+      department: employeeData.position,
+      position: employeeData.position,
       user: {
         update: {
           firstName: employeeData.firstName,
           lastName: employeeData.lastName,
           phone: employeeData.phone,
+          status: employeeData.status,
         },
       },
     },

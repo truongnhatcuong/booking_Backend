@@ -6,12 +6,36 @@ import employeeRegister, {
   updateEmployee,
 } from "../controller/employee.Controller.js";
 import { authEmployee } from "../lib/authEmployee.js";
-
+import { PERMISSIONS } from "../middleware/permission.js";
+import { checkPermission } from "../middleware/permission.middleware.js";
 const employeeRouter = express.Router();
 
-employeeRouter.post("/employee", employeeRegister);
-employeeRouter.get("/employee", authEmployee, getAllEmployee);
-employeeRouter.put("/employee/disabled/:id", authEmployee, disableUser);
-employeeRouter.delete("/employee/:id", DeleteEmployeeCotroller);
-employeeRouter.put("/employee/:id", authEmployee, updateEmployee);
+employeeRouter.use(authEmployee);
+
+employeeRouter.post(
+  "/employee",
+  checkPermission(PERMISSIONS.USER_CREATE),
+  employeeRegister,
+);
+employeeRouter.get(
+  "/employee",
+  checkPermission(PERMISSIONS.USER_READ),
+  getAllEmployee,
+);
+employeeRouter.put(
+  "/employee/disabled/:id",
+  checkPermission(PERMISSIONS.USER_UPDATE),
+  disableUser,
+);
+employeeRouter.delete(
+  "/employee/:id",
+  checkPermission(PERMISSIONS.USER_DELETE),
+  DeleteEmployeeCotroller,
+);
+employeeRouter.put(
+  "/employee/:id",
+  checkPermission(PERMISSIONS.USER_UPDATE),
+  updateEmployee,
+);
+
 export default employeeRouter;

@@ -9,7 +9,13 @@ export async function CreateRoleEmployeeRepo(data) {
   });
 }
 export async function GetRoleEmployeeRepo() {
-  return await prisma.role.findMany();
+  return await prisma.role.findMany({
+    where: {
+      NOT: {
+        name: "ADMIN",
+      },
+    },
+  });
 }
 export async function UpdateRoleEmployeeRepo(id, data) {
   const { name, permissions } = data;
@@ -36,8 +42,24 @@ export async function RoleEmployeeRepo(idEmployee, idRole) {
   });
 }
 
+export async function RemoveEmployeeRoleByRoleIdRepo(roleId) {
+  return await prisma.employeeRole.deleteMany({
+    where: { roleId },
+  });
+}
+
+export async function RemoveRoleRepo(id) {
+  return await prisma.role.delete({
+    where: { id },
+  });
+}
+
 export async function RemoveEmployeeRoleRepo(id) {
   return await prisma.employeeRole.delete({
     where: { id },
   });
+}
+
+export async function FindRole(id) {
+  return await prisma.role.findUnique({ where: { id } });
 }

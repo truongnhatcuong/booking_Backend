@@ -9,24 +9,24 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  email     String     @unique
-  password  String?
-  firstName String
-  lastName  String
-  phone     String?
-  userType  UserType
-  token     String?    @db.VarChar(255)
-  status    UserStatus @default(ACTIVE)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  faceDescriptor  String?  @db.Text
-  customer  Customer?
-  employee  Employee?
-@@index([userType])
-@@index([firstName])
-@@index([lastName])
+  id             String     @id @default(uuid())
+  email          String     @unique
+  password       String?
+  firstName      String
+  lastName       String
+  phone          String?
+  userType       UserType
+  token          String?    @db.VarChar(255)
+  status         UserStatus @default(ACTIVE)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  faceDescriptor String?    @db.Text
+  customer       Customer?
+  employee       Employee?
 
+  @@index([userType])
+  @@index([firstName])
+  @@index([lastName])
   @@map("users")
 }
 
@@ -38,8 +38,9 @@ model Customer {
   country  String?
   idNumber String?
   bookings Booking[]
-  reviews  Review[]
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviews  Review[]
+
   @@index([idNumber])
   @@map("customers")
 }
@@ -144,19 +145,15 @@ model Booking {
   payments        Payment[]
   reviews         Review[]
 
-   // ⚡ TỐI ƯU CHO TRUY VẤN
   @@index([status])
   @@index([checkInDate])
   @@index([checkOutDate])
-  @@index([checkInDate, checkOutDate])  // cực mạnh cho query overlap
-  @@index([bookingDate])                // sort mới dùng
-  @@index([totalAmount])                // sort asc/desc
-
-  // foreign key index
+  @@index([checkInDate, checkOutDate])
+  @@index([bookingDate])
+  @@index([totalAmount])
   @@index([customerId])
   @@index([discountId])
   @@index([guestId])
-
   @@map("bookings")
 }
 
@@ -187,6 +184,8 @@ model Payment {
   bookingId     String
   amount        Decimal       @db.Decimal(10, 2)
   booking       Booking       @relation(fields: [bookingId], references: [id])
+
+  @@index([bookingId], map: "payments_bookingId_fkey")
   @@map("payments")
 }
 
