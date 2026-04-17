@@ -349,14 +349,16 @@ export async function createGuest(req, res) {
 export async function refreshToken(req, res) {
   try {
     const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken) {
+      return res.status(401).json({ message: "Không có refresh token" });
+    }
+
     const newAccessToken = await refreshTokenService(refreshToken);
 
-    res.cookie("token", newAccessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 20 * 60 * 1000,
-    });
+    if (!newAccessToken) {
+      return res.status(401).json({ message: "Refresh token không hợp lệ" });
+    }
+    setTokenCookies(res, newAccessToken, refreshToken, false);
 
     return res.status(200).json({
       message: "Access token mới đã được cấp",

@@ -179,7 +179,8 @@ export async function refreshTokenService(refreshToken) {
     lastName: decoded.lastName,
     role: decoded.role,
   };
-  const newAccessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+  const newAccessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "20m" });
+
   return newAccessToken;
 }
 

@@ -121,10 +121,11 @@ export async function findBlogUnique(id) {
 }
 
 export async function publishedBlogRepo(id) {
-  const findBlog = findBlogUnique(id);
+  const findBlog = await findBlogUnique(id);
   if (!findBlog) {
     throw new NotFoundError("not found id");
   }
+
   let newpublished = !findBlog.published;
 
   return await prisma.blogPost.update({
@@ -139,7 +140,7 @@ export async function publishedBlogRepo(id) {
 }
 
 export async function deleteBlogRepo(id) {
-  const findBlog = findBlogUnique(id);
+  const findBlog = await findBlogUnique(id);
   if (!findBlog) {
     throw new NotFoundError("not found id");
   }
