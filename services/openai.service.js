@@ -24,7 +24,7 @@ import {
 import { prisma } from "../lib/client.js";
 
 const llm1 = new ModelAi({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.API_KEY_AI,
 });
 
 // const llm = new DeepSeekLLM();
@@ -417,68 +417,85 @@ export async function GetChatHistoryService(sessionId) {
 }
 
 function extractKeyword(topic) {
-  if (!topic) return "";
+  if (!topic) return { imageKeyword: "", promptContent: "", coverIndex: 0 };
 
-  // 1. Lấy phần trước dấu "-" hoặc "–" nếu có
+  // Format: "keyword | prompt content | coverIndex"
+  // Ví dụ: "cầu rồng | Khám phá Đà Nẵng | 3"
   const parts = topic
-    .split(/[-–]/)
+    .split("|")
     .map((p) => p.trim())
     .filter(Boolean);
-  let keyword = parts[0] || topic;
 
-  // 2. Loại bỏ dấu tiếng Việt
-  keyword = keyword
+  let imageKeyword = parts[0] || topic;
+  const promptContent = parts[1] || parts[0] || topic;
+  const coverIndex = parseInt(parts[2] || "0") || 0; // mặc định ảnh đầu tiên
+
+  imageKeyword = imageKeyword
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  keyword = encodeURIComponent(keyword);
+  imageKeyword = encodeURIComponent(imageKeyword);
 
-  return keyword;
+  return { imageKeyword, promptContent, coverIndex };
 }
 
 //ai about generate-post
 export async function generatePostService(topic) {
-  const keyword = extractKeyword(topic);
+  const { imageKeyword, promptContent, coverIndex } = extractKeyword(topic);
 
-  const url = `https://api.unsplash.com/search/photos?query=${keyword}&client_id=SbfhmV7iVU5kw8YQRh0p7cwiMdKmWvgSuPj-l_j5bvk`;
+  const url = `https://api.unsplash.com/search/photos?query=${imageKeyword}&client_id=SbfhmV7iVU5kw8YQRh0p7cwiMdKmWvgSuPj-l_j5bvk`;
 
   const response = await axios.get(url);
 
   if (!response.data.results || response.data.results.length === 0) {
-    throw new Error(`Không tìm thấy ảnh cho từ khóa: ${keyword}`);
+    throw new Error(`Không tìm thấy ảnh cho từ khóa: ${imageKeyword}`);
   }
+  const allImages = response.data.results.map((img) => img.urls.regular);
 
-  // const coverImage = response.data.results[0].urls.regular;
-  const contentImages = response.data.results.map((img) => img.urls.regular);
+  const safeIndex = coverIndex < allImages.length ? coverIndex : 0;
+  const coverImage = allImages[safeIndex];
+
+  // Content images — bỏ ảnh cover ra
+  const contentImages = allImages.filter((_, i) => i !== safeIndex);
 
   const prompt = `
 Bạn là một content writer chuyên nghiệp với 10 năm kinh nghiệm viết blog.
 
-NHIỆM VỤ: Tạo một bài viết blog chất lượng cao về chủ đề: "${topic}"
+NHIỆM VỤ: Tạo một bài viết blog chất lượng cao về chủ đề: "${promptContent}". Bài viết phải hấp dẫn, giàu thông tin và tối ưu SEO.
 
 YÊU CẦU CỤ THỂ:
 1. Tiêu đề: Hấp dẫn, có từ khóa SEO, dài 40-50 ký tự
 2. Tóm tắt: 2-3 câu súc tích, gây tò mò cho người đọc
-3. Nội dung:
-   - Chia thành 4-6 phần rõ ràng với tiêu đề phụ (##)
-   - Có phần mở đầu thu hút (hook)
-   - Có phần kết luận và call-to-action
-   - Chèn ảnh bằng markdown: ![alt text](URL)
-   - Ảnh liên quan: ${contentImages?.join(", ") || "Không có"}
+3. Nội dung phải là HTML hợp lệ:
+   - Dùng <h2>, <h3> cho tiêu đề phụ
+   - Dùng <p> cho đoạn văn
+   - Dùng <ul><li> hoặc <ol><li> cho danh sách
+   - Dùng <strong> cho chữ đậm, <em> cho chữ nghiêng
+   - Dùng <blockquote> cho trích dẫn
+   - Chèn ảnh vào nội dung bằng thẻ: <img src="URL" alt="mô tả ảnh" style="width:100%;border-radius:8px;margin:16px 0;" />
+   - Phân bổ ảnh đều trong bài, mỗi phần nên có 1 ảnh minh họa
+   - Danh sách ảnh để sử dụng (dùng hết nếu có thể): ${contentImages?.join(", ") || "Không có"}
    - Giọng văn: Chuyên nghiệp nhưng thân thiện, dễ hiểu
+   - Có phần mở đầu thu hút và kết luận call-to-action
+   - Độ dài: 800-1200 từ
 
-Trả về **100% JSON hợp lệ**, đúng format:
+4. Ảnh bìa: ${coverImage}
+
+Trả về **100% JSON hợp lệ**, đúng format sau, không thêm bất kỳ text nào bên ngoài:
 {
   "title": "Tiêu đề bài viết",
   "summary": "Tóm tắt 2-3 câu",
-  "content": "Nội dung bài viết",
-  "coverImage": "${contentImages || "https://example.com/default.jpg"}(chỉ một ảnh duy nhất)"
+  "content": "<h2>Tiêu đề phần 1</h2><p>Nội dung...</p><img src=\\"URL\\" alt=\\"mô tả\\" /><h2>Tiêu đề phần 2</h2><p>...</p>",
+  "coverImage": "${coverImage}"
 }
 
-LƯU Ý:
-- Chỉ trả về JSON hợp lệ, không markdown, không text ngoài
-- Viết bằng Tiếng Việt tự nhiên, cuốn hút
+LƯU Ý QUAN TRỌNG:
+- Chỉ trả về JSON hợp lệ, KHÔNG có markdown, KHÔNG có text bên ngoài JSON
+- Trong chuỗi JSON, dấu nháy kép bên trong phải được escape thành \\"
+- Không dùng ký tự xuống dòng thật trong chuỗi JSON, dùng \\n nếu cần
+- Sử dụng TẤT CẢ ảnh được cung cấp, phân bổ đều trong bài
+- Viết bằng Tiếng Việt tự nhiên, cuốn hút, giàu cảm xúc
 `;
   const result = await llm1._call(prompt);
   // ✅ Trích text ra từ object trả về
