@@ -128,9 +128,6 @@ export async function updateEmployeeRepo(id, employeeData) {
     where: {
       id,
     },
-    include: {
-      user: true,
-    },
     data: {
       department: employeeData.position,
       position: employeeData.position,

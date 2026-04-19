@@ -25,8 +25,14 @@ export async function createEmployeeService({
 }) {
   const employee = await findEmployeeByEmail(email);
   if (employee) {
-    throw new NotFoundError("Email Đã Tồn Tại Trong Hệ Thống");
+    if (employee.userType === "CUSTOMER") {
+      throw new NotFoundError(
+        "Email đã tồn tại dưới dạng khách hàng, vui lòng sử dụng email khác",
+      );
+    }
+    throw new NotFoundError("Email đã tồn tại");
   }
+
   const hashedPassword = bcrypt.hashSync(password, 10);
 
   const newEmployee = await createEmployee({
@@ -45,7 +51,7 @@ export async function createEmployeeService({
       userType: newEmployee.userType,
     },
     JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "1h" },
   );
   await updateTokenToDb(newEmployee.id, token);
 
@@ -87,7 +93,6 @@ export async function disableService(id, action) {
 export async function updateEmployeeService(id, employeeData) {
   const updatedEmployee = await updateEmployeeRepo(id, employeeData);
   if (!updatedEmployee) throw NotFoundError("Không tìm thấy Employee");
-  if (!updatedEmployee.user)
-    throw NotFoundError("Employee chưa có User gắn kèm");
+
   return updatedEmployee;
 }
