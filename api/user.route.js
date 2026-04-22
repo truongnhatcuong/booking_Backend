@@ -49,7 +49,7 @@ routerUser.get(
 );
 routerUser.get("/customer", getAllCustomer);
 routerUser.get("/user", authCustomer, getUserController);
-routerUser.get("/auditlog", getAuditLog);
+routerUser.get("/auditlog", authEmployee, getAuditLog);
 routerUser.post("/forgot-password", forgotPassword);
 routerUser.post("/reset-password", resetPassword);
 routerUser.post("/reset-password", resetPassword);

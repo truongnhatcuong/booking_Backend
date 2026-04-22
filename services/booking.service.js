@@ -1,6 +1,7 @@
 import NotFoundError from "../errors/not-found.error.js";
 import {
   AuditLogCustomerBooking,
+  EmployeeCancelBooking,
   logCancelBooking,
   logCheckIn,
   logCheckOut,
@@ -67,8 +68,8 @@ export async function bookingService({
     guestId,
   });
 
-  const name = booking.customer.user.firstName + booking.customer.user.lastName;
-  const to = booking.customer.user.email;
+  const name = booking?.customer?.user?.firstName + booking?.customer?.user?.lastName;
+  const to = booking?.customer?.user?.email;
   const roomName = room.roomNumber;
   await pusher.trigger("admin-channel", "new-booking", {
     customer:
@@ -200,8 +201,11 @@ export async function confirmStatusService(id) {
   return confirm;
 }
 
-export async function CancelledBookingService(id) {
+export async function CancelledBookingService(id, user) {
   const cancelled = await CancelledBookingRepo(id);
+  if (["EMPLOYEE", "ADMIN"].includes(user.userType)) {
+    await EmployeeCancelBooking(user, cancelled);
+  }
   return cancelled;
 }
 
