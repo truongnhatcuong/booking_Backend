@@ -5,9 +5,15 @@ import {
   UpdateAmenityRepo,
 } from "../repositories/amenity.repo.js";
 
-export async function getAmenityService() {
-  const amenity = await getAmenityRepository();
-  return { amenity };
+export async function getAmenityService(page, limit) {
+  const [amenity, total] = await getAmenityRepository(page, limit);
+  const parsedLimit = Number(limit) || 10;
+  return {
+    amenity,
+    page: Number(page) || 1,
+    limit: parsedLimit,
+    totalPages: Math.ceil(total / parsedLimit),
+  };
 }
 
 export async function createAmenityService({ name, description }) {

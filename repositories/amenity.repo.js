@@ -1,13 +1,21 @@
 import { prisma } from "../lib/client.js";
 
-export async function getAmenityRepository() {
-  return await prisma.amenity.findMany({
-    select: {
-      name: true,
-      description: true,
-      id: true,
-    },
-  });
+export async function getAmenityRepository(page, limit) {
+  const parsedPage = Number(page) || 1;
+  const parsedLimit = Number(limit) || 10;
+
+  return await prisma.$transaction([
+    prisma.amenity.findMany({
+      select: {
+        name: true,
+        description: true,
+        id: true,
+      },
+      skip: (parsedPage - 1) * parsedLimit,
+      take: parsedLimit,
+    }),
+    prisma.amenity.count(),
+  ]);
 }
 
 export async function createAmenityRepo(data) {

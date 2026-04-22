@@ -6,8 +6,9 @@ import {
 } from "../services/amenity.service.js";
 
 export async function amenityGet(req, res) {
-  const { amenity } = await getAmenityService();
-  return res.status(200).json({ amenity, message: "thành công" });
+  const { page, limit } = req.query;
+  const data = await getAmenityService(page, limit);
+  return res.status(200).json({ data, message: "thành công" });
 }
 
 export default async function amenityCreate(req, res) {
