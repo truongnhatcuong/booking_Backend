@@ -32,18 +32,64 @@ export async function updateFaceDescriptorService(userId, descriptor) {
 }
 
 export const getGoogleTTS = async (text) => {
-  const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=vi&client=tw-ob&ttsspeed=1`;
+  const MAX_LENGTH = 200;
 
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      Referer: "https://translate.google.com/",
-    },
-  });
+  // 1. Hàm chia nhỏ văn bản theo dấu câu hoặc khoảng trắng
+  const splitText = (input) => {
+    const chunks = [];
+    const sentences = input.match(/[^.?!,:;]+[.?!,:;]*\s*/g) || [input];
 
-  if (!response.ok) throw new Error("Google TTS request failed");
+    let currentChunk = "";
+    for (const sentence of sentences) {
+      if ((currentChunk + sentence).length <= MAX_LENGTH) {
+        currentChunk += sentence;
+      } else {
+        if (currentChunk) chunks.push(currentChunk.trim());
 
-  const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
+        // Nếu một câu đơn lẻ vẫn quá dài 200 ký tự, chia theo khoảng trắng
+        if (sentence.length > MAX_LENGTH) {
+          const words = sentence.split(" ");
+          let temp = "";
+          for (const word of words) {
+            if ((temp + word).length + 1 <= MAX_LENGTH) {
+              temp += (temp ? " " : "") + word;
+            } else {
+              chunks.push(temp.trim());
+              temp = word;
+            }
+          }
+          currentChunk = temp;
+        } else {
+          currentChunk = sentence;
+        }
+      }
+    }
+    if (currentChunk) chunks.push(currentChunk.trim());
+    return chunks;
+  };
+
+  const chunks = splitText(text);
+  const audioBuffers = [];
+
+  // 2. Lấy dữ liệu âm thanh cho từng đoạn (Tuần tự để tránh rate limit)
+  for (const chunk of chunks) {
+    if (!chunk) continue;
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunk)}&tl=vi&client=tw-ob&ttsspeed=1`;
+
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        Referer: "https://translate.google.com/",
+      },
+    });
+
+    if (!response.ok) throw new Error(`Google TTS failed for chunk: ${chunk}`);
+
+    const arrayBuffer = await response.arrayBuffer();
+    audioBuffers.push(Buffer.from(arrayBuffer));
+  }
+
+  // 3. Nối tất cả các buffer lại thành một file mp3 duy nhất
+  return Buffer.concat(audioBuffers);
 };
