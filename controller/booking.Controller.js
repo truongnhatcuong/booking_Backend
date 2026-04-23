@@ -139,8 +139,9 @@ export async function cancelledBooking(req, res) {
 
 export async function getBookingForUser(req, res) {
   const customerId = req.user.customer.id;
+  const { page, limit } = req.query;
   try {
-    const data = await getBookingForUserService(customerId);
+    const data = await getBookingForUserService(customerId, page, limit);
     return res.status(200).json({ success: true, data });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });

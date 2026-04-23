@@ -68,7 +68,8 @@ export async function bookingService({
     guestId,
   });
 
-  const name = booking?.customer?.user?.firstName + booking?.customer?.user?.lastName;
+  const name =
+    booking?.customer?.user?.firstName + booking?.customer?.user?.lastName;
   const to = booking?.customer?.user?.email;
   const roomName = room.roomNumber;
   await pusher.trigger("admin-channel", "new-booking", {
@@ -209,8 +210,8 @@ export async function CancelledBookingService(id, user) {
   return cancelled;
 }
 
-export async function getBookingForUserService(id) {
-  const result = await getBookingForUserRepo(id);
+export async function getBookingForUserService(id, page, limit) {
+  const result = await getBookingForUserRepo(id, page, limit);
   return result;
 }
 

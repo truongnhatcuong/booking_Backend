@@ -324,8 +324,13 @@ export async function CancelledBookingRepo(id) {
   });
 }
 
-export async function getBookingForUserRepo(id) {
+export async function getBookingForUserRepo(id, page = 1, limit = 10) {
+  const skip = (Number(page) - 1) * Number(limit);
+  const take = Number(limit);
+
   return await prisma.booking.findMany({
+    skip,
+    take,
     where: { customerId: id },
     select: {
       id: true,
