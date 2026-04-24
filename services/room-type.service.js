@@ -9,6 +9,7 @@ import {
   getRoomTypeByIdRepo,
   getRoomTypeRepo,
   removeAmenityRepo,
+  roomTypeDropdownRepo,
   updateRoomTypeRepo,
 } from "../repositories/room-type.repo.js";
 
@@ -126,4 +127,9 @@ export async function removeAmenityService(roomTypeId, amenityId) {
   }
   const deleteAmenity = await removeAmenityRepo(roomTypeId, amenityId);
   return deleteAmenity;
+}
+
+export async function roomTypeDropdownService() {
+  const result = await roomTypeDropdownRepo();
+  return result;
 }

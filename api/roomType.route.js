@@ -7,11 +7,13 @@ import {
   getRoomTypesById,
   removeAmenity,
   updateRoomType,
+  getRoomTypeDropdown,
 } from "../controller/roomtype.Controller.js";
 
 const routerRoomtype = express.Router();
 routerRoomtype.post("/", createRoomTypeController);
 routerRoomtype.get("/", getAllRoomTypes);
+routerRoomtype.get("/dropdown/list", getRoomTypeDropdown);
 routerRoomtype.get("/:id", getRoomTypesById);
 routerRoomtype.put("/:id", updateRoomType);
 routerRoomtype.delete("/:id", DeleteRoomType);

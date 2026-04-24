@@ -11,10 +11,10 @@ export async function createRoomRepo(data) {
       roomTypeId: data.roomTypeId,
       images: data.imageUrls
         ? {
-            create: data.imageUrls.map((url) => ({
-              imageUrl: url,
-            })),
-          }
+          create: data.imageUrls.map((url) => ({
+            imageUrl: url,
+          })),
+        }
         : null,
     },
   });
@@ -38,20 +38,20 @@ export async function getAllRoomRepo(
     // ROOM TYPE
     ...(roomType && roomType.length > 0
       ? {
-          roomType: {
-            name: { in: roomType },
+        roomType: {
+          name: { in: roomType },
 
-            ...(customer && {
-              maxOccupancy: { gte: Number(customer) },
-            }),
-          },
-        }
+          ...(customer && {
+            maxOccupancy: { gte: Number(customer) },
+          }),
+        },
+      }
       : customer
         ? {
-            roomType: {
-              maxOccupancy: { gte: Number(customer) },
-            },
-          }
+          roomType: {
+            maxOccupancy: { gte: Number(customer) },
+          },
+        }
         : {}),
     // SEARCH
     ...(search && {
@@ -65,17 +65,17 @@ export async function getAllRoomRepo(
       checkOut &&
       !isNaN(checkInDate.getTime()) &&
       !isNaN(checkOutDate.getTime()) && {
-        bookingItems: {
-          none: {
-            booking: {
-              AND: [
-                { checkInDate: { lt: checkOutDate } },
-                { checkOutDate: { gt: checkInDate } },
-              ],
-            },
+      bookingItems: {
+        none: {
+          booking: {
+            AND: [
+              { checkInDate: { lt: checkOutDate } },
+              { checkOutDate: { gt: checkInDate } },
+            ],
           },
         },
-      }),
+      },
+    }),
   };
 
   // song song lấy danh sách và tổng số phòng
@@ -179,13 +179,13 @@ export async function getRoomCustomerRepo(
     // ROOM TYPE
     ...(roomType || customer
       ? {
-          roomType: {
-            ...(roomType && { name: roomType }),
-            ...(customer && {
-              maxOccupancy: { gte: Number(customer) },
-            }),
-          },
-        }
+        roomType: {
+          ...(roomType && { name: roomType }),
+          ...(customer && {
+            maxOccupancy: { gte: Number(customer) },
+          }),
+        },
+      }
       : {}),
 
     // DATE RANGE
@@ -193,17 +193,17 @@ export async function getRoomCustomerRepo(
       checkOut &&
       !isNaN(checkInDate.getTime()) &&
       !isNaN(checkOutDate.getTime()) && {
-        bookingItems: {
-          none: {
-            booking: {
-              AND: [
-                { checkInDate: { lt: checkOutDate } },
-                { checkOutDate: { gt: checkInDate } },
-              ],
-            },
+      bookingItems: {
+        none: {
+          booking: {
+            AND: [
+              { checkInDate: { lt: checkOutDate } },
+              { checkOutDate: { gt: checkInDate } },
+            ],
           },
         },
-      }),
+      },
+    }),
   };
   return prisma.room.findMany({
     where,
@@ -255,10 +255,9 @@ export async function getRoomsByRoomTypeIdRepo(id) {
           roomNumber: true,
           currentPrice: true,
           originalPrice: true,
-
           images: {
+            take: 1,
             select: {
-              id: true,
               imageUrl: true,
             },
           },
