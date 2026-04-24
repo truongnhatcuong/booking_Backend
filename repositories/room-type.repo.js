@@ -110,3 +110,13 @@ export async function removeAmenityRepo(roomTypeId, amenityId) {
     select: { roomTypeId: true, amenityId: true },
   });
 }
+
+export async function roomTypeDropdownRepo() {
+  return await prisma.roomType.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+}
+

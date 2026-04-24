@@ -13,6 +13,7 @@ import {
   getRoomTypeService,
   removeAmenityService,
   updateRoomTypeService,
+  roomTypeDropdownService,
 } from "../services/room-type.service.js";
 
 export async function createRoomTypeController(req, res) {
@@ -114,6 +115,15 @@ export async function removeAmenity(req, res) {
     return res
       .status(200)
       .json(`đã xóa thành công id : ${deleted.amenityId} từ RoomtypeAmenity`);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function getRoomTypeDropdown(req, res) {
+  try {
+    const result = await roomTypeDropdownService();
+    return res.status(200).json(result);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
