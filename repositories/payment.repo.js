@@ -19,7 +19,7 @@ export async function webhookpaymentRepo({ orderCode }) {
       transactionId: orderCode,
     },
     select: {
-      bookingId: true
+      bookingId: true,
     },
   });
 
@@ -35,23 +35,24 @@ export async function webhookpaymentRepo({ orderCode }) {
   return payment;
 }
 
-export async function deletePaymentRepo({ orderCode }) {
+export async function cancelPaymentRepo({ orderCode }) {
   const payment = await prisma.payment.findFirst({
     where: { transactionId: orderCode },
     select: {
       bookingId: true,
       id: true,
-    }
-  });
-  await prisma.bookingItem.deleteMany({
-    where: { bookingId: payment.bookingId },
+    },
   });
 
-  await prisma.payment.delete({
+  if (!payment) return null;
+
+  await prisma.payment.update({
     where: { id: payment.id },
+    data: { status: "FAILED" },
   });
 
-  return await prisma.booking.delete({
+  return await prisma.booking.update({
     where: { id: payment.bookingId },
+    data: { status: "CANCELLED" },
   });
 }

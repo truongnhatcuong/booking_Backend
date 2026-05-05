@@ -422,3 +422,51 @@ export async function removeBookingUserRepo(id) {
     },
   });
 }
+
+export async function cancelBookingUserRepo(id) {
+  // 1. Tìm thông tin đơn và tất cả các phòng liên quan
+  const booking = await prisma.booking.findUnique({
+    where: { id },
+    select: {
+      bookingItems: {
+        select: { roomId: true },
+      },
+    },
+  });
+
+  if (!booking) throw new Error("Booking not found");
+
+  const roomIds = booking.bookingItems.map((item) => item.roomId);
+
+  return await prisma.$transaction(async (tx) => {
+    await tx.room.updateMany({
+      where: {
+        id: { in: roomIds },
+      },
+      data: {
+        status: "AVAILABLE",
+      },
+    });
+
+    // Cập nhật trạng thái Booking và Payment
+    return await tx.booking.update({
+      where: { id },
+      data: {
+        status: "CANCELLED",
+        payments: {
+          updateMany: {
+            where: { bookingId: id },
+            data: {
+              status: "FAILED", // Dùng FAILED thay vì CANCELLED theo Schema
+            },
+          },
+        },
+      },
+      include: {
+        customer: {
+          select: { user: true },
+        },
+      },
+    });
+  });
+}

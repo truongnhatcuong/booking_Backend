@@ -8,15 +8,17 @@ import {
 
 const countBookingsInRange = async (from, to) => {
   return prisma.booking.count({
-    where:
-      from && to
+    where: {
+      status: { not: "CANCELLED" },
+      ...(from && to
         ? {
             bookingDate: {
               gte: from,
               lte: to,
             },
           }
-        : {},
+        : {}),
+    },
   });
 };
 
@@ -101,6 +103,7 @@ const BookingSouthRepoByMonth = async (year) => {
     const bookings = await prisma.booking.groupBy({
       by: ["bookingSource"],
       where: {
+        status: { not: "CANCELLED" },
         bookingSource: { in: ["WEBSITE", "DIRECT"] },
         bookingDate: {
           gte: startDate,

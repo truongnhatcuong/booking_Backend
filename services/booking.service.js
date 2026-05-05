@@ -11,6 +11,7 @@ import { sendBookingMail } from "../lib/mailer.js";
 import { pusher } from "../lib/Pusher.js";
 import {
   BookingRepo,
+  cancelBookingUserRepo,
   CancelledBookingRepo,
   confirmStatusRepo,
   FindRoom,
@@ -69,22 +70,30 @@ export async function bookingService({
   });
 
   const name =
-    booking?.customer?.user?.firstName + booking?.customer?.user?.lastName;
+    (booking?.customer?.user?.firstName || "") +
+    " " +
+    (booking?.customer?.user?.lastName || "Khách");
   const to = booking?.customer?.user?.email;
-  const roomName = room.roomNumber;
-  await pusher.trigger("admin-channel", "new-booking", {
-    customer:
-      booking.customer.user.firstName + " " + booking.customer.user.lastName,
-    room: roomName,
-  });
-  await sendBookingMail({
-    to,
-    name,
-    roomName,
-    checkInDate,
-    checkOutDate,
-  });
-  await AuditLogCustomerBooking(booking.customer.user, booking);
+  const roomName = room?.roomNumber || "Phòng";
+
+  if (booking?.customer?.user) {
+    await pusher.trigger("admin-channel", "new-booking", {
+      customer: name,
+      room: roomName,
+    });
+  }
+
+  if (to) {
+    await sendBookingMail({
+      to,
+      name,
+      roomName,
+      checkInDate,
+      checkOutDate,
+    });
+  }
+
+  await AuditLogCustomerBooking(booking?.customer?.user, booking);
 
   return booking;
 }
@@ -216,7 +225,7 @@ export async function getBookingForUserService(id, page, limit) {
 }
 
 export async function removeBookingUserService(id) {
-  const result = await removeBookingUserRepo(id);
+  const result = await cancelBookingUserRepo(id);
   if (!result) {
     throw new NotFoundError("Không tìm thấy đặt phòng");
   }

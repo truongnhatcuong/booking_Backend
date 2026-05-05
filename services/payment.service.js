@@ -1,17 +1,17 @@
 import PayOS from "@payos/node";
 
 import {
-  deletePaymentRepo,
+  cancelPaymentRepo,
   payMentBookingRepo,
   webhookpaymentRepo,
 } from "../repositories/payment.repo.js";
 import NotFoundError from "../errors/not-found.error.js";
-import { logPaymentSuccess } from "../lib/auditLog.js";
+import { logPaymentCancel, logPaymentSuccess } from "../lib/auditLog.js";
 
 const payos = new PayOS(
   process.env.PAYOS_CLIENT_ID,
   process.env.PAYOS_API_KEY,
-  process.env.PAYOS_CHECKSUM_KEY
+  process.env.PAYOS_CHECKSUM_KEY,
 );
 
 export async function payMentBookingService({
@@ -36,7 +36,7 @@ export async function payMentBookingService({
 
   if (paymentMethod === "CASH") {
     await payMentBookingRepo({ amount, status, paymentMethod, bookingId });
-    await logPaymentSuccess(null, bookingId)
+    await logPaymentSuccess(null, bookingId);
     return { message: "Payment recorded as cash" };
   }
 
@@ -65,8 +65,6 @@ export async function payMentBookingService({
       bookingId,
       transactionId: String(orderCode),
     });
-
-
 
     return payment;
   }
@@ -111,10 +109,11 @@ export async function webhookpaymentService({ orderCode, status }) {
   let payment = null;
   if (status == "PAID") {
     const payment = await webhookpaymentRepo({ orderCode });
-    await logPaymentSuccess(null, payment.bookingId)
+    await logPaymentSuccess(null, payment.bookingId);
   }
   if (status == "CANCELLED") {
-    payment = await deletePaymentRepo({ orderCode });
+    payment = await cancelPaymentRepo({ orderCode });
+    await logPaymentCancel(null, payment.bookingId);
   }
 
   return payment;

@@ -62,8 +62,6 @@ export async function webhookPayment(req, res) {
   try {
     const { status, orderCode } = req.body;
 
-    console.log(status, "/", orderCode);
-
     if (!orderCode || !status) {
       throw new Error("Invalid webhook data");
     }
