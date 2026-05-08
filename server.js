@@ -60,7 +60,9 @@ app.use(passport.session());
 app.get("/", async (req, res) => {
   res.status(200).json({ message: "server running....." });
 });
-app.use("/api/auth", routerUser, employeeRouter, GoogleRouter);
+app.use("/api/auth", GoogleRouter);
+app.use("/api/auth", routerUser);
+app.use("/api/auth", employeeRouter);
 app.use("/api/amenity", amenityRouter);
 app.use("/api/roomtype", routerRoomtype);
 app.use("/api/room", routerRoom);

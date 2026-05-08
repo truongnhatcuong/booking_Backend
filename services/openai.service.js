@@ -426,33 +426,55 @@ function extractKeyword(topic) {
     .map((p) => p.trim())
     .filter(Boolean);
 
-  let imageKeyword = parts[0] || topic;
+  let rawKeyword = parts[0] || topic;
   const promptContent = parts[1] || parts[0] || topic;
-  const coverIndex = parseInt(parts[2] || "0") || 0; // mặc định ảnh đầu tiên
+  const coverIndex = parseInt(parts[2] || "0") || 0;
 
-  imageKeyword = imageKeyword
+  // Chuẩn hóa để tìm kiếm (bỏ dấu)
+  let normalizedKeyword = rawKeyword
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  imageKeyword = encodeURIComponent(imageKeyword);
-
-  return { imageKeyword, promptContent, coverIndex };
+  return {
+    imageKeyword: encodeURIComponent(normalizedKeyword),
+    rawKeyword,
+    promptContent,
+    coverIndex
+  };
 }
 
 //ai about generate-post
 export async function generatePostService(topic) {
-  const { imageKeyword, promptContent, coverIndex } = extractKeyword(topic);
+  const { imageKeyword, rawKeyword, promptContent, coverIndex } = extractKeyword(topic);
+  const UNSPLASH_CLIENT_ID = "SbfhmV7iVU5kw8YQRh0p7cwiMdKmWvgSuPj-l_j5bvk";
 
-  const url = `https://api.unsplash.com/search/photos?query=${imageKeyword}&client_id=SbfhmV7iVU5kw8YQRh0p7cwiMdKmWvgSuPj-l_j5bvk`;
+  const fetchImages = async (query) => {
+    try {
+      const url = `https://api.unsplash.com/search/photos?query=${query}&client_id=${UNSPLASH_CLIENT_ID}`;
+      const res = await axios.get(url);
+      return res.data.results || [];
+    } catch (err) {
+      console.error(`Error fetching images for ${query}:`, err.message);
+      return [];
+    }
+  };
 
-  const response = await axios.get(url);
+  // Thử tìm với từ khóa đã xử lý
+  let results = await fetchImages(imageKeyword);
 
-  if (!response.data.results || response.data.results.length === 0) {
-    throw new Error(`Không tìm thấy ảnh cho từ khóa: ${imageKeyword}`);
+  // Nếu không thấy, thử tìm với từ khóa gốc (có thể Unsplash hiểu tiếng Việt)
+  if (results.length === 0 && rawKeyword !== imageKeyword) {
+    results = await fetchImages(encodeURIComponent(rawKeyword));
   }
-  const allImages = response.data.results.map((img) => img.urls.regular);
 
+  // Nếu vẫn không thấy, thử từ khóa chung về Đà Nẵng (vị trí khách sạn)
+  if (results.length === 0) {
+    results = await fetchImages(encodeURIComponent("DaNang"));
+  }
+
+
+  const allImages = results.map((img) => img.urls.regular);
   const safeIndex = coverIndex < allImages.length ? coverIndex : 0;
   const coverImage = allImages[safeIndex];
 
