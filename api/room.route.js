@@ -11,6 +11,8 @@ import {
   getRoomsByRoomTypeId,
   getBookedDates,
   calculateRoomPrice,
+  getRecommendedRooms,
+  getRoomFeatures,
 } from "../controller/room.Controller.js";
 import { authEmployee } from "../lib/authEmployee.js";
 
@@ -26,4 +28,6 @@ routerRoom.delete("/images/:id", deleteImageToRoom);
 routerRoom.post("/images/:id", addImageToRoom);
 routerRoom.get("/roomtype/:id", getRoomsByRoomTypeId);
 routerRoom.get("/:id/booked-dates", getBookedDates);
+routerRoom.post("/recommended", getRecommendedRooms);
+routerRoom.get("/ai/features", getRoomFeatures);
 export default routerRoom;

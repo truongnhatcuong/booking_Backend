@@ -362,3 +362,66 @@ export async function findRoomForSeason(bookingStart, bookingEnd, roomId) {
     },
   });
 }
+
+export async function getRecommendedRoomsRepo(roomIds = []) {
+  const include = {
+    images: true,
+    roomType: {
+      include: {
+        amenities: {
+          include: {
+            amenity: true,
+          },
+        },
+      },
+    },
+  };
+
+  if (roomIds && roomIds.length > 0) {
+    return prisma.room.findMany({
+      where: {
+        id: { in: roomIds },
+      },
+      include,
+    });
+  }
+
+  // Fallback: Top 3 trending rooms based on booking count
+  return prisma.room.findMany({
+    take: 3,
+    orderBy: {
+      bookingItems: {
+        _count: "desc",
+      },
+    },
+    include,
+  });
+}
+
+export async function getRoomFeaturesRepo() {
+  return prisma.room.findMany({
+    select: {
+      id: true,
+      currentPrice: true,
+      roomType: {
+        select: {
+          maxOccupancy: true,
+          amenities: {
+            select: {
+              amenity: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      _count: {
+        select: {
+          bookingItems: true,
+        },
+      },
+    },
+  });
+}
