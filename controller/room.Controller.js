@@ -15,6 +15,8 @@ import {
   getRoomCustomerService,
   getRoomsByRoomTypeIdService,
   updateRoomService,
+  getRecommendedRoomsService,
+  getRoomFeaturesService,
 } from "../services/room.service.js";
 
 export async function createRoom(req, res) {
@@ -176,5 +178,24 @@ export async function calculateRoomPrice(req, res) {
       success: false,
       message: error.message || "Lỗi máy chủ khi tính giá phòng",
     });
+  }
+}
+
+export async function getRecommendedRooms(req, res) {
+  try {
+    const { roomIds } = req.body; // Expecting { roomIds: [...] }
+    const rooms = await getRecommendedRoomsService(roomIds);
+    return res.status(200).json(rooms);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+export async function getRoomFeatures(req, res) {
+  try {
+    const data = await getRoomFeaturesService();
+    return res.status(200).json(data);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 }

@@ -1,4 +1,5 @@
 import redisClient from "../repositories/redisClient.js";
+import axios from "axios";
 import {
   addImageToRoomRepo,
   createRoomRepo,
@@ -12,6 +13,8 @@ import {
   getRoomIdRepo,
   getRoomsByRoomTypeIdRepo,
   updateRoomRepo,
+  getRecommendedRoomsRepo,
+  getRoomFeaturesRepo,
 } from "../repositories/room.repo.js";
 
 export async function createRoomService(data) {
@@ -189,4 +192,27 @@ export async function calculatePriceRoomService(
       ? Number(room.currentPrice)
       : Number(room.originalPrice),
   };
+}
+
+export async function getRecommendedRoomsService(roomIds) {
+  try {
+    const aiResponse = await axios.post("http://localhost:8000/recommend", {
+      roomId: roomIds && roomIds.length > 0 ? roomIds[0] : null,
+    });
+
+    const recommendedIds = aiResponse.data.recommendations;
+    if (recommendedIds && recommendedIds.length > 0) {
+      return await getRecommendedRoomsRepo(recommendedIds);
+    }
+  } catch (error) {
+    console.error("❌ AI Service Error:", error.message);
+    // Nếu AI lỗi, fallback về logic mặc định trong Repo
+  }
+
+  const rooms = await getRecommendedRoomsRepo(roomIds);
+  return rooms;
+}
+
+export async function getRoomFeaturesService() {
+  return await getRoomFeaturesRepo();
 }
